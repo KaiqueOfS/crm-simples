@@ -35,4 +35,11 @@ public class ClienteController {
     public void deletar(@PathVariable Long id) {
         repository.deleteById(id);
     }
+
+    // Atualização dos dados de um cliente existente
+    @PutMapping("/{id}")
+    public Cliente atualizar(@PathVariable Long id, @RequestBody Cliente clienteAtualizado) {
+        clienteAtualizado.setId(id); // garante que vai atualizar o cliente certo
+        return repository.save(clienteAtualizado);
+    }
 }

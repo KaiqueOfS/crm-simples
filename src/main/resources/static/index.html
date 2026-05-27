@@ -9,9 +9,11 @@
         input { padding: 8px; margin: 5px; border: 1px solid #ccc; border-radius: 4px; width: 200px; }
         button { padding: 8px 16px; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; margin: 5px; }
         button.deletar { background: #e53935; }
+        button.editar { background: #1976D2; }
         table { width: 100%; border-collapse: collapse; margin-top: 30px; }
         th, td { padding: 10px; border: 1px solid #ddd; text-align: left; }
         th { background: #f5f5f5; }
+
     </style>
 </head>
 <body>
@@ -20,10 +22,10 @@
 
 <!-- Formulário de cadastro -->
 <h2>Novo Cliente</h2>
-<input type="text" id="nome" placeholder="Nome" />
-<input type="text" id="telefone" placeholder="Telefone" />
-<input type="text" id="email" placeholder="E-mail" />
-<input type="text" id="observacoes" placeholder="Observações" />
+<input type="text" id="nome" placeholder="Nome"/>
+<input type="text" id="telefone" placeholder="Telefone"/>
+<input type="text" id="email" placeholder="E-mail"/>
+<input type="text" id="observacoes" placeholder="Observações"/>
 <button onclick="cadastrar()">Cadastrar</button>
 
 <!-- Tabela de clientes -->
@@ -44,6 +46,47 @@
 </table>
 
 <script>
+    // Preenche o formulário com os dados do cliente para edição
+function editar(id, nome, telefone, email, observacoes) {
+    document.getElementById('nome').value = nome;
+    document.getElementById('telefone').value = telefone;
+    document.getElementById('email').value = email;
+    document.getElementById('observacoes').value = observacoes;
+
+    // Muda o botão cadastrar para salvar edição
+    const btn = document.querySelector('button[onclick="cadastrar()"]');
+    btn.textContent = 'Salvar Edição';
+    btn.setAttribute('onclick', `salvarEdicao(${id})`);
+}
+
+// Envia os dados atualizados para a API
+function salvarEdicao(id) {
+    const cliente = {
+        nome: document.getElementById('nome').value,
+        telefone: document.getElementById('telefone').value,
+        email: document.getElementById('email').value,
+        observacoes: document.getElementById('observacoes').value
+    };
+    fetch(`http://localhost:8080/clientes/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(cliente)
+    }).then(() => {
+        // Volta o botão para cadastrar depois de salvar
+        const btn = document.querySelector('button[onclick*="salvarEdicao"]');
+        btn.textContent = 'Cadastrar';
+        btn.setAttribute('onclick', 'cadastrar()');
+        limparFormulario();
+        carregarClientes();
+    });
+}
+    // Limpa todos os campos do formulário
+     function limparFormulario() {
+       document.getElementById('nome').value = '';
+      document.getElementById('telefone').value = '';
+      document.getElementById('email').value = '';
+      document.getElementById('observacoes').value = '';
+    }
     // Busca todos os clientes e preenche a tabela
     function carregarClientes() {
         fetch('http://localhost:8080/clientes')
@@ -59,7 +102,8 @@
                             <td>${c.telefone}</td>
                             <td>${c.email}</td>
                             <td>${c.observacoes}</td>
-                            <td><button class="deletar" onclick="deletar(${c.id})">Deletar</button></td>
+                            <td><button class="editar" onclick="editar(${c.id}, '${c.nome}', '${c.telefone}', '${c.email}', '${c.observacoes}')">Editar</button>
+                            <button class="deletar" onclick="deletar(${c.id})">Deletar</button></td>
                         </tr>`;
                 });
             });
@@ -77,7 +121,10 @@
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(cliente)
-        }).then(() => carregarClientes());
+        }).then(() => {
+          limparFormulario();
+          carregarClientes();
+        });
     }
 
     // Deleta o cliente pelo ID
