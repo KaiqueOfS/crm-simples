@@ -6,14 +6,13 @@
     <style>
         body { font-family: Arial, sans-serif; max-width: 800px; margin: 40px auto; padding: 0 20px; }
         h1 { color: #333; }
-        input { padding: 8px; margin: 5px; border: 1px solid #ccc; border-radius: 4px; width: 200px; }
+        input { padding: 8px; border: 1px solid #ccc; border-radius: 4px; width: 200px; }
         button { padding: 8px 16px; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; margin: 5px; }
         button.deletar { background: #e53935; }
         button.editar { background: #1976D2; }
         table { width: 100%; border-collapse: collapse; margin-top: 30px; }
         th, td { padding: 10px; border: 1px solid #ddd; text-align: left; }
         th { background: #f5f5f5; }
-
     </style>
 </head>
 <body>
@@ -22,11 +21,25 @@
 
 <!-- Formulário de cadastro -->
 <h2>Novo Cliente</h2>
-<input type="text" id="nome" placeholder="Nome"/>
-<input type="text" id="telefone" placeholder="Telefone"/>
-<input type="text" id="email" placeholder="E-mail"/>
-<input type="text" id="observacoes" placeholder="Observações"/>
-<button onclick="cadastrar()">Cadastrar</button>
+<div style="display: inline-block; vertical-align: top; margin: 5px;">
+    <input type="text" id="nome" placeholder="Nome" style="margin: 0; width: 200px;"/>
+    <div id="erro-nome" style="color: red; font-size: 12px; height: 16px;"></div>
+</div>
+<div style="display: inline-block; vertical-align: top; margin: 5px;">
+    <input type="text" id="telefone" placeholder="Telefone" style="margin: 0; width: 200px;"/>
+    <div id="erro-telefone" style="color: red; font-size: 12px; height: 16px;"></div>
+</div>
+<div style="display: inline-block; vertical-align: top; margin: 5px;">
+    <input type="text" id="email" placeholder="E-mail (opcional)" style="margin: 0; width: 200px;"/>
+    <div style="height: 16px;"></div>
+</div>
+<br/>
+<div style="display: inline-block; vertical-align: top; margin: 5px;">
+    <input type="text" id="observacoes" placeholder="Observações" style="margin: 0; width: 200px;"/>
+    <div style="height: 16px;"></div>
+</div>
+<button onclick="cadastrar()" style="vertical-align: top; margin-top: 5px;">Cadastrar</button>
+<div id="mensagem" style="margin-top: 10px; font-weight: bold;"></div>
 
 <!-- Tabela de clientes -->
 <h2>Clientes Cadastrados</h2>
@@ -41,53 +54,111 @@
         <th>Ação</th>
     </tr>
     </thead>
-    <tbody id="tabelaClientes">
-    </tbody>
+    <tbody id="tabelaClientes"></tbody>
 </table>
 
 <script>
-    // Preenche o formulário com os dados do cliente para edição
-function editar(id, nome, telefone, email, observacoes) {
-    document.getElementById('nome').value = nome;
-    document.getElementById('telefone').value = telefone;
-    document.getElementById('email').value = email;
-    document.getElementById('observacoes').value = observacoes;
 
-    // Muda o botão cadastrar para salvar edição
-    const btn = document.querySelector('button[onclick="cadastrar()"]');
-    btn.textContent = 'Salvar Edição';
-    btn.setAttribute('onclick', `salvarEdicao(${id})`);
-}
+    // ==========================================
+    // CADASTRO DE CLIENTES
+    // ==========================================
 
-// Envia os dados atualizados para a API
-function salvarEdicao(id) {
-    const cliente = {
-        nome: document.getElementById('nome').value,
-        telefone: document.getElementById('telefone').value,
-        email: document.getElementById('email').value,
-        observacoes: document.getElementById('observacoes').value
-    };
-    fetch(`http://localhost:8080/clientes/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(cliente)
-    }).then(() => {
-        // Volta o botão para cadastrar depois de salvar
-        const btn = document.querySelector('button[onclick*="salvarEdicao"]');
-        btn.textContent = 'Cadastrar';
-        btn.setAttribute('onclick', 'cadastrar()');
-        limparFormulario();
-        carregarClientes();
-    });
-}
-    // Limpa todos os campos do formulário
-     function limparFormulario() {
-       document.getElementById('nome').value = '';
-      document.getElementById('telefone').value = '';
-      document.getElementById('email').value = '';
-      document.getElementById('observacoes').value = '';
+    // Valida os campos obrigatórios e envia os dados para a API
+    function cadastrar() {
+        const nome = document.getElementById('nome').value;
+        const telefone = document.getElementById('telefone').value;
+
+        limparErros();
+
+        let temErro = false;
+        if (!nome.trim()) {
+            mostrarErro('nome', 'Nome é obrigatório');
+            temErro = true;
+        }
+        if (!telefone.trim()) {
+            mostrarErro('telefone', 'Telefone é obrigatório');
+            temErro = true;
+        }
+        if (temErro) return;
+
+        const cliente = {
+            nome: nome,
+            telefone: telefone,
+            email: document.getElementById('email').value,
+            observacoes: document.getElementById('observacoes').value
+        };
+
+        fetch('http://localhost:8080/clientes', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(cliente)
+        }).then(res => {
+            if (res.ok) {
+                mostrarMensagem('Cliente cadastrado com sucesso!', 'green');
+                limparFormulario();
+                carregarClientes();
+            } else {
+                mostrarMensagem('Erro ao cadastrar cliente.', 'red');
+            }
+        });
     }
-    // Busca todos os clientes e preenche a tabela
+
+    // ==========================================
+    // EDIÇÃO DE CLIENTES
+    // ==========================================
+
+    // Preenche o formulário com os dados do cliente para edição
+    function editar(id, nome, telefone, email, observacoes) {
+        document.getElementById('nome').value = nome;
+        document.getElementById('telefone').value = telefone;
+        document.getElementById('email').value = email;
+        document.getElementById('observacoes').value = observacoes;
+
+        // Muda o botão Cadastrar para Salvar Edição
+        const btn = document.querySelector('button[onclick="cadastrar()"]');
+        btn.textContent = 'Salvar Edição';
+        btn.setAttribute('onclick', `salvarEdicao(${id})`);
+    }
+
+    // Envia os dados atualizados para a API
+    function salvarEdicao(id) {
+        const cliente = {
+            nome: document.getElementById('nome').value,
+            telefone: document.getElementById('telefone').value,
+            email: document.getElementById('email').value,
+            observacoes: document.getElementById('observacoes').value
+        };
+
+        fetch(`http://localhost:8080/clientes/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(cliente)
+        }).then(() => {
+            // Volta o botão para Cadastrar depois de salvar
+            const btn = document.querySelector('button[onclick*="salvarEdicao"]');
+            btn.textContent = 'Cadastrar';
+            btn.setAttribute('onclick', 'cadastrar()');
+            limparFormulario();
+            carregarClientes();
+        });
+    }
+
+    // ==========================================
+    // EXCLUSÃO DE CLIENTES
+    // ==========================================
+
+    // Deleta o cliente pelo ID
+    function deletar(id) {
+        fetch(`http://localhost:8080/clientes/${id}`, {
+            method: 'DELETE'
+        }).then(() => carregarClientes());
+    }
+
+    // ==========================================
+    // LISTAGEM DE CLIENTES
+    // ==========================================
+
+    // Busca todos os clientes da API e preenche a tabela
     function carregarClientes() {
         fetch('http://localhost:8080/clientes')
             .then(res => res.json())
@@ -102,40 +173,65 @@ function salvarEdicao(id) {
                             <td>${c.telefone}</td>
                             <td>${c.email}</td>
                             <td>${c.observacoes}</td>
-                            <td><button class="editar" onclick="editar(${c.id}, '${c.nome}', '${c.telefone}', '${c.email}', '${c.observacoes}')">Editar</button>
-                            <button class="deletar" onclick="deletar(${c.id})">Deletar</button></td>
+                            <td>
+                                <button class="editar" onclick="editar(${c.id}, '${c.nome}', '${c.telefone}', '${c.email}', '${c.observacoes}')">Editar</button>
+                                <button class="deletar" onclick="deletar(${c.id})">Deletar</button>
+                            </td>
                         </tr>`;
                 });
             });
     }
 
-    // Cadastra um novo cliente com os dados do formulário
-    function cadastrar() {
-        const cliente = {
-            nome: document.getElementById('nome').value,
-            telefone: document.getElementById('telefone').value,
-            email: document.getElementById('email').value,
-            observacoes: document.getElementById('observacoes').value
-        };
-        fetch('http://localhost:8080/clientes', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(cliente)
-        }).then(() => {
-          limparFormulario();
-          carregarClientes();
+    // ==========================================
+    // VALIDAÇÃO VISUAL
+    // ==========================================
+
+    // Marca o campo com borda vermelha e exibe mensagem no espaço fixo abaixo
+    function mostrarErro(campoId, mensagem) {
+        const campo = document.getElementById(campoId);
+        campo.style.border = '1.5px solid red';
+        campo.style.background = '#fff0f0';
+        document.getElementById('erro-' + campoId).textContent = mensagem;
+    }
+
+    // Remove todos os erros visuais dos campos
+    function limparErros() {
+        ['nome', 'telefone'].forEach(id => {
+            const campo = document.getElementById(id);
+            campo.style.border = '';
+            campo.style.background = '';
+            document.getElementById('erro-' + id).textContent = '';
         });
     }
 
-    // Deleta o cliente pelo ID
-    function deletar(id) {
-        fetch(`http://localhost:8080/clientes/${id}`, {
-            method: 'DELETE'
-        }).then(() => carregarClientes());
+    // ==========================================
+    // UTILITÁRIOS
+    // ==========================================
+
+    // Exibe mensagem de sucesso ou erro para o usuário (some após 3 segundos)
+    function mostrarMensagem(texto, cor) {
+        const div = document.getElementById('mensagem');
+        div.textContent = texto;
+        div.style.color = cor;
+        setTimeout(() => div.textContent = '', 3000);
     }
+
+    // Limpa todos os campos do formulário e remove os erros visuais
+    function limparFormulario() {
+        limparErros();
+        document.getElementById('nome').value = '';
+        document.getElementById('telefone').value = '';
+        document.getElementById('email').value = '';
+        document.getElementById('observacoes').value = '';
+    }
+
+    // ==========================================
+    // INICIALIZAÇÃO
+    // ==========================================
 
     // Carrega os clientes ao abrir a página
     carregarClientes();
+
 </script>
 
 </body>

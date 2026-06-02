@@ -3,6 +3,7 @@ package com.kaique.crm_simples;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
+import jakarta.validation.Valid;
 
 // Controller responsável por gerenciar os clientes
 // recebe as requisições HTTP e retorna as respostas em JSON
@@ -26,7 +27,7 @@ public class ClienteController {
 
     // Cadastro de novo cliente
     @PostMapping
-    public Cliente cadastrar(@RequestBody Cliente cliente) {
+    public Cliente cadastrar(@Valid @RequestBody Cliente cliente) {
         return repository.save(cliente);
     }
 
@@ -38,7 +39,7 @@ public class ClienteController {
 
     // Atualização dos dados de um cliente existente
     @PutMapping("/{id}")
-    public Cliente atualizar(@PathVariable Long id, @RequestBody Cliente clienteAtualizado) {
+    public Cliente atualizar(@PathVariable Long id,@Valid @RequestBody Cliente clienteAtualizado) {
         clienteAtualizado.setId(id); // garante que vai atualizar o cliente certo
         return repository.save(clienteAtualizado);
     }

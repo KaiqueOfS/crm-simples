@@ -1,7 +1,7 @@
 package com.kaique.crm_simples;
 
 import jakarta.persistence.*;
-
+import jakarta.validation.constraints.*;
 @Entity
 @Table(name = "clientes")
 public class Cliente {
@@ -10,9 +10,18 @@ public class Cliente {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+// nome é obrigatório
+    @NotBlank(message = "Nome é Obrigatório")
     private String nome;
+
+    //telefone é obrigatório
+    @NotBlank(message = "Telefone é obrigatório")
     private String telefone;
+
+    // Validação de email desativada temporariamente
+// @Email(message = "Email inválido")
     private String email;
+
     private String observacoes;
 
     public Long getId() { return id; }
