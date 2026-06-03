@@ -1,4 +1,4 @@
-package com.kaique.crm_simples;
+package com.kaique.crm_simples.model;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;

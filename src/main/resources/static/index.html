@@ -4,58 +4,285 @@
     <meta charset="UTF-8">
     <title>CRM Simples</title>
     <style>
-        body { font-family: Arial, sans-serif; max-width: 800px; margin: 40px auto; padding: 0 20px; }
-        h1 { color: #333; }
-        input { padding: 8px; border: 1px solid #ccc; border-radius: 4px; width: 200px; }
-        button { padding: 8px 16px; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; margin: 5px; }
-        button.deletar { background: #e53935; }
-        button.editar { background: #1976D2; }
-        table { width: 100%; border-collapse: collapse; margin-top: 30px; }
-        th, td { padding: 10px; border: 1px solid #ddd; text-align: left; }
-        th { background: #f5f5f5; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #0f1117;
+            color: #f1f1f1;
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 780px;
+            margin: 0 auto;
+        }
+
+        /* Cabeçalho */
+        .header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 24px;
+        }
+
+        .header-icon {
+            width: 36px;
+            height: 36px;
+            background: #6366f1;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .header-title {
+            font-size: 18px;
+            font-weight: 500;
+            color: #f1f1f1;
+        }
+
+        .header-badge {
+            margin-left: auto;
+            font-size: 12px;
+            background: #1e1b4b;
+            color: #818cf8;
+            padding: 3px 12px;
+            border-radius: 20px;
+            border: 0.5px solid #3730a3;
+        }
+
+        /* Formulário */
+        .form-section {
+            background: #1a1d25;
+            border-radius: 12px;
+            border: 0.5px solid #2a2d35;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .form-section h2 {
+            font-size: 14px;
+            font-weight: 500;
+            color: #9ca3af;
+            margin-bottom: 14px;
+        }
+
+        .form-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .campo-grupo {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            flex: 1;
+            min-width: 180px;
+        }
+
+        .erro-campo {
+            color: #f87171;
+            font-size: 12px;
+            height: 16px;
+        }
+
+        input {
+            width: 100%;
+            padding: 9px 12px;
+            border-radius: 8px;
+            border: 1px solid #2a2d35;
+            background: #0f1117;
+            color: #f1f1f1;
+            font-size: 13px;
+            outline: none;
+            transition: border 0.15s;
+        }
+
+        input::placeholder { color: #555; }
+        input:focus { border-color: #6366f1; }
+
+        .btn-cadastrar {
+            background: #6366f1;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 9px 20px;
+            font-size: 13px;
+            cursor: pointer;
+            margin-top: 4px;
+            transition: background 0.15s;
+        }
+
+        .btn-cadastrar:hover { background: #4f46e5; }
+
+        #mensagem {
+            margin-top: 10px;
+            font-size: 13px;
+            font-weight: 500;
+            min-height: 20px;
+        }
+
+        /* Tabela */
+        .clientes-section {
+            background: #1a1d25;
+            border-radius: 12px;
+            border: 0.5px solid #2a2d35;
+            overflow: hidden;
+        }
+
+        .clientes-section h2 {
+            font-size: 14px;
+            font-weight: 500;
+            color: #9ca3af;
+            padding: 16px 20px;
+            border-bottom: 0.5px solid #2a2d35;
+        }
+
+        .cliente-row {
+            display: flex;
+            align-items: center;
+            padding: 12px 20px;
+            border-bottom: 0.5px solid #2a2d35;
+            gap: 12px;
+            transition: background 0.1s;
+        }
+
+        .cliente-row:hover { background: #20232c; }
+        .cliente-row:last-child { border-bottom: none; }
+
+        .avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: #1e1b4b;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 500;
+            color: #818cf8;
+            flex-shrink: 0;
+        }
+
+        .cliente-info { flex: 1; min-width: 0; }
+
+        .cliente-nome {
+            font-size: 13px;
+            font-weight: 500;
+            color: #f1f1f1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .cliente-telefone {
+            font-size: 12px;
+            color: #6b7280;
+            margin-top: 2px;
+        }
+
+        .cliente-email {
+            font-size: 12px;
+            color: #6b7280;
+            margin-top: 2px;
+        }
+
+        .cliente-obs {
+            font-size: 12px;
+            color: #6b7280;
+            flex: 1;
+            min-width: 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .btn-editar {
+            font-size: 12px;
+            background: none;
+            border: 1px solid #2a2d35;
+            border-radius: 6px;
+            padding: 4px 12px;
+            color: #aaa;
+            cursor: pointer;
+            transition: border 0.15s, color 0.15s;
+        }
+
+        .btn-editar:hover { border-color: #6366f1; color: #818cf8; }
+
+        .btn-deletar {
+            font-size: 12px;
+            background: none;
+            border: 1px solid #3f1515;
+            border-radius: 6px;
+            padding: 4px 12px;
+            color: #f87171;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+
+        .btn-deletar:hover { background: #3f1515; }
+
+        .sem-clientes {
+            padding: 32px 20px;
+            text-align: center;
+            color: #555;
+            font-size: 13px;
+        }
     </style>
 </head>
 <body>
 
-<h1>📋 CRM Simples</h1>
+<div class="container">
 
-<!-- Formulário de cadastro -->
-<h2>Novo Cliente</h2>
-<div style="display: inline-block; vertical-align: top; margin: 5px;">
-    <input type="text" id="nome" placeholder="Nome" style="margin: 0; width: 200px;"/>
-    <div id="erro-nome" style="color: red; font-size: 12px; height: 16px;"></div>
-</div>
-<div style="display: inline-block; vertical-align: top; margin: 5px;">
-    <input type="text" id="telefone" placeholder="Telefone" style="margin: 0; width: 200px;"/>
-    <div id="erro-telefone" style="color: red; font-size: 12px; height: 16px;"></div>
-</div>
-<div style="display: inline-block; vertical-align: top; margin: 5px;">
-    <input type="text" id="email" placeholder="E-mail (opcional)" style="margin: 0; width: 200px;"/>
-    <div style="height: 16px;"></div>
-</div>
-<br/>
-<div style="display: inline-block; vertical-align: top; margin: 5px;">
-    <input type="text" id="observacoes" placeholder="Observações" style="margin: 0; width: 200px;"/>
-    <div style="height: 16px;"></div>
-</div>
-<button onclick="cadastrar()" style="vertical-align: top; margin-top: 5px;">Cadastrar</button>
-<div id="mensagem" style="margin-top: 10px; font-weight: bold;"></div>
+    <!-- Cabeçalho -->
+    <div class="header">
+        <div class="header-icon">📋</div>
+        <span class="header-title">CRM Simples</span>
+        <span class="header-badge" id="badge-count">0 clientes</span>
+    </div>
 
-<!-- Tabela de clientes -->
-<h2>Clientes Cadastrados</h2>
-<table>
-    <thead>
-    <tr>
-        <th>ID</th>
-        <th>Nome</th>
-        <th>Telefone</th>
-        <th>E-mail</th>
-        <th>Observações</th>
-        <th>Ação</th>
-    </tr>
-    </thead>
-    <tbody id="tabelaClientes"></tbody>
-</table>
+    <!-- Formulário -->
+    <div class="form-section">
+        <h2>Novo cliente</h2>
+        <div class="form-row">
+            <div class="campo-grupo">
+                <input type="text" id="nome" placeholder="Nome"/>
+                <div class="erro-campo" id="erro-nome"></div>
+            </div>
+            <div class="campo-grupo">
+                <input type="text" id="telefone" placeholder="Telefone"/>
+                <div class="erro-campo" id="erro-telefone"></div>
+            </div>
+            <div class="campo-grupo">
+                <input type="text" id="email" placeholder="E-mail (opcional)"/>
+                <div class="erro-campo"></div>
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="campo-grupo" style="max-width: 380px;">
+                <input type="text" id="observacoes" placeholder="Observações"/>
+                <div class="erro-campo"></div>
+            </div>
+        </div>
+        <button class="btn-cadastrar" onclick="cadastrar()">+ Cadastrar cliente</button>
+        <div id="mensagem"></div>
+    </div>
+
+    <!-- Lista de clientes -->
+    <div class="clientes-section">
+        <h2>Clientes cadastrados</h2>
+        <div id="tabelaClientes">
+            <div class="sem-clientes">Nenhum cliente cadastrado ainda.</div>
+        </div>
+    </div>
+
+</div>
 
 <script>
 
@@ -63,7 +290,6 @@
     // CADASTRO DE CLIENTES
     // ==========================================
 
-    // Valida os campos obrigatórios e envia os dados para a API
     function cadastrar() {
         const nome = document.getElementById('nome').value;
         const telefone = document.getElementById('telefone').value;
@@ -94,11 +320,11 @@
             body: JSON.stringify(cliente)
         }).then(res => {
             if (res.ok) {
-                mostrarMensagem('Cliente cadastrado com sucesso!', 'green');
+                mostrarMensagem('Cliente cadastrado com sucesso!', '#4ade80');
                 limparFormulario();
                 carregarClientes();
             } else {
-                mostrarMensagem('Erro ao cadastrar cliente.', 'red');
+                mostrarMensagem('Erro ao cadastrar cliente.', '#f87171');
             }
         });
     }
@@ -107,20 +333,17 @@
     // EDIÇÃO DE CLIENTES
     // ==========================================
 
-    // Preenche o formulário com os dados do cliente para edição
     function editar(id, nome, telefone, email, observacoes) {
         document.getElementById('nome').value = nome;
         document.getElementById('telefone').value = telefone;
         document.getElementById('email').value = email;
         document.getElementById('observacoes').value = observacoes;
 
-        // Muda o botão Cadastrar para Salvar Edição
-        const btn = document.querySelector('button[onclick="cadastrar()"]');
-        btn.textContent = 'Salvar Edição';
-        btn.setAttribute('onclick', `salvarEdicao(${id})`);
+        const btn = document.querySelector('.btn-cadastrar');
+        btn.textContent = 'Salvar edição';
+        btn.onclick = () => salvarEdicao(id);
     }
 
-    // Envia os dados atualizados para a API
     function salvarEdicao(id) {
         const cliente = {
             nome: document.getElementById('nome').value,
@@ -134,10 +357,9 @@
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(cliente)
         }).then(() => {
-            // Volta o botão para Cadastrar depois de salvar
-            const btn = document.querySelector('button[onclick*="salvarEdicao"]');
-            btn.textContent = 'Cadastrar';
-            btn.setAttribute('onclick', 'cadastrar()');
+            const btn = document.querySelector('.btn-cadastrar');
+            btn.textContent = '+ Cadastrar cliente';
+            btn.onclick = cadastrar;
             limparFormulario();
             carregarClientes();
         });
@@ -147,7 +369,6 @@
     // EXCLUSÃO DE CLIENTES
     // ==========================================
 
-    // Deleta o cliente pelo ID
     function deletar(id) {
         fetch(`http://localhost:8080/clientes/${id}`, {
             method: 'DELETE'
@@ -158,26 +379,36 @@
     // LISTAGEM DE CLIENTES
     // ==========================================
 
-    // Busca todos os clientes da API e preenche a tabela
     function carregarClientes() {
         fetch('http://localhost:8080/clientes')
             .then(res => res.json())
             .then(clientes => {
-                const tabela = document.getElementById('tabelaClientes');
-                tabela.innerHTML = '';
+                const container = document.getElementById('tabelaClientes');
+                const badge = document.getElementById('badge-count');
+                badge.textContent = clientes.length + ' cliente' + (clientes.length !== 1 ? 's' : '');
+
+                if (clientes.length === 0) {
+                    container.innerHTML = '<div class="sem-clientes">Nenhum cliente cadastrado ainda.</div>';
+                    return;
+                }
+
+                container.innerHTML = '';
                 clientes.forEach(c => {
-                    tabela.innerHTML += `
-                        <tr>
-                            <td>${c.id}</td>
-                            <td>${c.nome}</td>
-                            <td>${c.telefone}</td>
-                            <td>${c.email}</td>
-                            <td>${c.observacoes}</td>
-                            <td>
-                                <button class="editar" onclick="editar(${c.id}, '${c.nome}', '${c.telefone}', '${c.email}', '${c.observacoes}')">Editar</button>
-                                <button class="deletar" onclick="deletar(${c.id})">Deletar</button>
-                            </td>
-                        </tr>`;
+                    const iniciais = c.nome.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
+                    const row = document.createElement('div');
+                    row.className = 'cliente-row';
+                    row.innerHTML = `
+                        <div class="avatar">${iniciais}</div>
+                        <div class="cliente-info">
+                            <div class="cliente-nome">${c.nome}</div>
+                            <div class="cliente-telefone">${c.telefone}</div>
+                            ${c.email ? `<div class="cliente-email">${c.email}</div>` : ''}
+                        </div>
+                        ${c.observacoes ? `<div class="cliente-obs">${c.observacoes}</div>` : ''}
+                        <button class="btn-editar" onclick="editar(${c.id}, '${c.nome}', '${c.telefone}', '${c.email}', '${c.observacoes}')">Editar</button>
+                        <button class="btn-deletar" onclick="deletar(${c.id})">Deletar</button>
+                    `;
+                    container.appendChild(row);
                 });
             });
     }
@@ -186,15 +417,13 @@
     // VALIDAÇÃO VISUAL
     // ==========================================
 
-    // Marca o campo com borda vermelha e exibe mensagem no espaço fixo abaixo
     function mostrarErro(campoId, mensagem) {
         const campo = document.getElementById(campoId);
-        campo.style.border = '1.5px solid red';
-        campo.style.background = '#fff0f0';
+        campo.style.border = '1px solid #f87171';
+        campo.style.background = '#2a1515';
         document.getElementById('erro-' + campoId).textContent = mensagem;
     }
 
-    // Remove todos os erros visuais dos campos
     function limparErros() {
         ['nome', 'telefone'].forEach(id => {
             const campo = document.getElementById(id);
@@ -208,7 +437,6 @@
     // UTILITÁRIOS
     // ==========================================
 
-    // Exibe mensagem de sucesso ou erro para o usuário (some após 3 segundos)
     function mostrarMensagem(texto, cor) {
         const div = document.getElementById('mensagem');
         div.textContent = texto;
@@ -216,20 +444,17 @@
         setTimeout(() => div.textContent = '', 3000);
     }
 
-    // Limpa todos os campos do formulário e remove os erros visuais
     function limparFormulario() {
         limparErros();
-        document.getElementById('nome').value = '';
-        document.getElementById('telefone').value = '';
-        document.getElementById('email').value = '';
-        document.getElementById('observacoes').value = '';
+        ['nome', 'telefone', 'email', 'observacoes'].forEach(id => {
+            document.getElementById(id).value = '';
+        });
     }
 
     // ==========================================
     // INICIALIZAÇÃO
     // ==========================================
 
-    // Carrega os clientes ao abrir a página
     carregarClientes();
 
 </script>
