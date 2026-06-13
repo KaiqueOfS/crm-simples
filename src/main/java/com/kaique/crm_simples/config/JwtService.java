@@ -3,7 +3,7 @@ package com.kaique.crm_simples.config;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.stereotype.Service;
-
+import io.github.cdimascio.dotenv.Dotenv;
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
@@ -11,8 +11,7 @@ import java.util.Date;
 @Service
 public class JwtService {
 
-    private static final String SECRET =
-            "minha-chave-secreta-super-segura-com-pelo-menos-32-caracteres";
+    private final String SECRET = Dotenv.load().get("JWT_SECRET");
 
     private final SecretKey key =
             Keys.hmacShaKeyFor(
