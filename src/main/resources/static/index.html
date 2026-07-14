@@ -724,6 +724,103 @@
         }
 
         .btn-modal-confirmar:hover { background: #dc2626; }
+
+        /* ==========================================
+           TELA DE PERFIL
+        ========================================== */
+
+        #tela-perfil {
+            display: none;
+            padding: 40px 20px;
+        }
+
+        .perfil-section {
+            background: var(--bg-card);
+            border-radius: 12px;
+            border: 0.5px solid var(--border);
+            padding: 24px;
+            margin-bottom: 16px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+            max-width: 480px;
+        }
+
+        .perfil-section h2 {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-sub);
+            margin-bottom: 16px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .perfil-campo {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            margin-bottom: 12px;
+        }
+
+        .perfil-campo label {
+            font-size: 12px;
+            color: var(--text-sub);
+        }
+
+        .perfil-email {
+            font-size: 13px;
+            color: var(--text-sub);
+            padding: 9px 12px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            cursor: not-allowed;
+        }
+
+        .btn-voltar {
+            font-size: 12px;
+            background: none;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 4px 12px;
+            color: var(--text-sub);
+            cursor: pointer;
+            transition: border 0.15s, color 0.15s;
+        }
+
+        .btn-voltar:hover { border-color: var(--accent); color: var(--text); }
+
+        #msg-perfil {
+            font-size: 13px;
+            font-weight: 500;
+            min-height: 20px;
+            margin-top: 12px;
+        }
+
+        .btn-perfil-header {
+            font-size: 12px;
+            background: rgba(255,255,255,0.1);
+            border: 0.5px solid rgba(255,255,255,0.15);
+            border-radius: 6px;
+            padding: 4px 12px;
+            color: var(--text-header);
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+
+        .btn-perfil-header:hover { background: rgba(255,255,255,0.2); }
+
+        .btn-exportar {
+            font-size: 12px;
+            background: none;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 5px 12px;
+            color: var(--text-sub);
+            cursor: pointer;
+            transition: border 0.15s, color 0.15s;
+            flex-shrink: 0;
+        }
+
+        .btn-exportar:hover { border-color: var(--accent); color: var(--text); }
     </style>
 </head>
 <body>
@@ -819,6 +916,7 @@
             <span class="header-title">Orbis</span>
             <div class="header-right">
                 <span class="header-badge" id="badge-count">0 clientes</span>
+                <button class="btn-perfil-header" onclick="mostrarPerfil()">Meu perfil</button>
                 <button class="theme-toggle" onclick="alternarTema()" title="Alternar modo escuro"></button>
                 <button class="btn-logout" onclick="sair()">Sair</button>
             </div>
@@ -880,6 +978,7 @@
                     <option value="PERDIDO">Perdido</option>
                 </select>
                 <span class="contador-filtro" id="contador-filtro"></span>
+                <button class="btn-exportar" onclick="exportarCSV()">⬇ Exportar CSV</button>
             </div>
             <div id="tabelaClientes">
                 <div class="sem-clientes">Nenhum cliente cadastrado ainda.</div>
@@ -889,6 +988,70 @@
     </div>
 </div>
 
+
+
+<!-- ==========================================
+     TELA DE PERFIL
+     Acessível pelo botão no cabeçalho.
+========================================== -->
+<div id="tela-perfil">
+    <div class="container">
+
+        <div class="header">
+            <div class="header-icon">
+                <svg width="20" height="20" viewBox="0 0 28 28" fill="none">
+                    <circle cx="14" cy="14" r="11" stroke="white" stroke-width="1.8"/>
+                    <circle cx="14" cy="10" r="3" stroke="white" stroke-width="1.8"/>
+                    <path d="M8 22c0-3.3 2.7-6 6-6s6 2.7 6 6" stroke="white" stroke-width="1.8" stroke-linecap="round"/>
+                    <line x1="14" y1="3" x2="14" y2="6" stroke="white" stroke-width="1.5" stroke-linecap="round" opacity="0.5"/>
+                    <line x1="14" y1="22" x2="14" y2="25" stroke="white" stroke-width="1.5" stroke-linecap="round" opacity="0.5"/>
+                    <line x1="3" y1="14" x2="6" y2="14" stroke="white" stroke-width="1.5" stroke-linecap="round" opacity="0.5"/>
+                    <line x1="22" y1="14" x2="25" y2="14" stroke="white" stroke-width="1.5" stroke-linecap="round" opacity="0.5"/>
+                </svg>
+            </div>
+            <span class="header-title">Orbis</span>
+            <div class="header-right">
+                <button class="theme-toggle" onclick="alternarTema()" title="Alternar modo escuro"></button>
+                <button class="btn-voltar" onclick="voltarParaApp()">← Voltar</button>
+                <button class="btn-logout" onclick="sair()">Sair</button>
+            </div>
+        </div>
+
+        <!-- Dados da conta -->
+        <div class="perfil-section">
+            <h2>Dados da conta</h2>
+            <div class="perfil-campo">
+                <label>Nome</label>
+                <input type="text" id="perfil-nome" placeholder="Seu nome" />
+            </div>
+            <div class="perfil-campo">
+                <label>E-mail (não pode ser alterado)</label>
+                <div class="perfil-email" id="perfil-email">—</div>
+            </div>
+            <button class="btn-cadastrar" onclick="salvarPerfil()">Salvar alterações</button>
+            <div id="msg-perfil"></div>
+        </div>
+
+        <!-- Alteração de senha -->
+        <div class="perfil-section">
+            <h2>Alterar senha</h2>
+            <div class="perfil-campo">
+                <label>Nova senha</label>
+                <input type="password" id="perfil-nova-senha" placeholder="Mínimo 6 caracteres" />
+            </div>
+            <div class="perfil-campo">
+                <label>Confirmar nova senha</label>
+                <input type="password" id="perfil-confirmar-senha" placeholder="Repita a nova senha" />
+            </div>
+            <p style="font-size:12px;color:var(--text-sub);margin-bottom:12px;">
+                Deixe em branco para manter a senha atual.
+            </p>
+            <button class="btn-cadastrar" onclick="salvarPerfil()">Salvar alterações</button>
+            <div id="msg-senha"></div>
+        </div>
+
+    </div>
+</div>
 
 <!-- ==========================================
      MODAL DE CONFIRMAÇÃO DE EXCLUSÃO
@@ -955,6 +1118,99 @@
         };
     }
 
+
+
+    // ==========================================
+    // PERFIL DO USUÁRIO
+    // ==========================================
+
+    function mostrarPerfil() {
+        // Esconde o app e mostra a tela de perfil
+        document.getElementById('tela-app').style.display    = 'none';
+        document.getElementById('tela-perfil').style.display = 'block';
+
+        // Busca os dados atuais do usuário no backend
+        fetch(`${API}/usuarios/perfil`, { headers: authHeaders() })
+            .then(res => {
+                if (res.status === 401) { sair(); return null; }
+                return res.json();
+            })
+            .then(u => {
+                if (!u) return;
+                document.getElementById('perfil-nome').value   = u.nome  || '';
+                document.getElementById('perfil-email').textContent = u.email || '';
+            });
+    }
+
+    function voltarParaApp() {
+        // Limpa os campos de senha ao sair do perfil
+        document.getElementById('perfil-nova-senha').value      = '';
+        document.getElementById('perfil-confirmar-senha').value = '';
+        document.getElementById('msg-perfil').textContent       = '';
+        document.getElementById('msg-senha').textContent        = '';
+
+        document.getElementById('tela-perfil').style.display = 'none';
+        document.getElementById('tela-app').style.display    = 'block';
+    }
+
+    function salvarPerfil() {
+        const nome          = document.getElementById('perfil-nome').value.trim();
+        const novaSenha     = document.getElementById('perfil-nova-senha').value;
+        const confirmarSenha = document.getElementById('perfil-confirmar-senha').value;
+
+        // Validação básica no front
+        if (!nome || nome.length < 2) {
+            mostrarMsgPerfil('Nome deve ter no mínimo 2 caracteres.', '#dc2626');
+            return;
+        }
+
+        if (novaSenha && novaSenha.length < 6) {
+            mostrarMsgSenha('Senha deve ter no mínimo 6 caracteres.', '#dc2626');
+            return;
+        }
+
+        if (novaSenha && novaSenha !== confirmarSenha) {
+            mostrarMsgSenha('As senhas não coincidem.', '#dc2626');
+            return;
+        }
+
+        // Envia para o backend
+        fetch(`${API}/usuarios/perfil`, {
+            method: 'PUT',
+            headers: authHeaders(),
+            body: JSON.stringify({ nome, novaSenha, confirmarSenha })
+        })
+        .then(res => res.json().then(data => ({ status: res.status, data })))
+        .then(({ status, data }) => {
+            if (status === 401) { sair(); return; }
+            if (status === 200) {
+                mostrarMsgPerfil('Perfil atualizado com sucesso!', '#16a34a');
+                if (novaSenha) {
+                    mostrarMsgSenha('Senha alterada com sucesso!', '#16a34a');
+                    document.getElementById('perfil-nova-senha').value      = '';
+                    document.getElementById('perfil-confirmar-senha').value = '';
+                }
+            } else {
+                const msg = data.erro || Object.values(data)[0] || 'Erro ao atualizar perfil.';
+                mostrarMsgPerfil(msg, '#dc2626');
+            }
+        })
+        .catch(() => mostrarMsgPerfil('Erro de conexão com o servidor.', '#dc2626'));
+    }
+
+    function mostrarMsgPerfil(texto, cor) {
+        const el = document.getElementById('msg-perfil');
+        el.textContent = texto;
+        el.style.color = cor;
+        setTimeout(() => el.textContent = '', 4000);
+    }
+
+    function mostrarMsgSenha(texto, cor) {
+        const el = document.getElementById('msg-senha');
+        el.textContent = texto;
+        el.style.color = cor;
+        setTimeout(() => el.textContent = '', 4000);
+    }
 
     // ==========================================
     // NAVEGAÇÃO ENTRE TELAS
@@ -1123,17 +1379,25 @@
                 email:       document.getElementById('email').value,
                 observacoes: document.getElementById('observacoes').value
             })
-        }).then(res => {
-            if (res.status === 401) { sair(); return; }
-            if (res.ok) {
+        })
+        .then(res => res.json().then(data => ({ status: res.status, data })))
+        .then(({ status, data }) => {
+            if (status === 401) { sair(); return; }
+            if (status === 200 || status === 201) {
                 mostrarMensagem('Cliente cadastrado com sucesso!', '#16a34a');
                 limparFormulario();
                 carregarClientes();
                 carregarDashboard();
+            } else if (status === 422) {
+                // Erros de validação do backend — mostra o primeiro campo com erro
+                const primeiro = Object.values(data)[0];
+                mostrarMensagem(primeiro || 'Dados inválidos.', '#dc2626');
             } else {
-                mostrarMensagem('Erro ao cadastrar cliente.', '#dc2626');
+                // Qualquer outro erro — mostra a mensagem do backend
+                mostrarMensagem(data.erro || 'Erro ao cadastrar cliente.', '#dc2626');
             }
-        });
+        })
+        .catch(() => mostrarMensagem('Erro de conexão com o servidor.', '#dc2626'));
     }
 
     // ==========================================
@@ -1163,16 +1427,26 @@
                 email:       document.getElementById('email').value,
                 observacoes: document.getElementById('observacoes').value
             })
-        }).then(res => {
-            if (res.status === 401) { sair(); return; }
-            // Restaura o botão para o modo cadastro
-            const btn = document.querySelector('.btn-cadastrar');
-            btn.textContent = '+ Cadastrar cliente';
-            btn.onclick = cadastrar;
-            limparFormulario();
-            carregarClientes();
-            carregarDashboard();
-        });
+        })
+        .then(res => res.json().then(data => ({ status: res.status, data })))
+        .then(({ status, data }) => {
+            if (status === 401) { sair(); return; }
+            if (status === 200) {
+                // Restaura o botão para o modo cadastro
+                const btn = document.querySelector('.btn-cadastrar');
+                btn.textContent = '+ Cadastrar cliente';
+                btn.onclick = cadastrar;
+                limparFormulario();
+                carregarClientes();
+                carregarDashboard();
+            } else if (status === 422) {
+                const primeiro = Object.values(data)[0];
+                mostrarMensagem(primeiro || 'Dados inválidos.', '#dc2626');
+            } else {
+                mostrarMensagem(data.erro || 'Erro ao atualizar cliente.', '#dc2626');
+            }
+        })
+        .catch(() => mostrarMensagem('Erro de conexão com o servidor.', '#dc2626'));
     }
 
     // ==========================================
@@ -1264,6 +1538,63 @@
                 // Aplica o filtro atual (pode ter busca/status ativo)
                 filtrar();
             });
+    }
+
+
+    // ==========================================
+    // EXPORTAR CLIENTES PARA CSV
+    // Gera o arquivo no próprio front usando os
+    // dados já carregados em memória.
+    // O usuário baixa o arquivo sem precisar de
+    // nenhuma chamada extra ao backend.
+    // ==========================================
+
+    function exportarCSV() {
+
+        if (todosClientes.length === 0) {
+            alert('Nenhum cliente para exportar.');
+            return;
+        }
+
+        // Cabeçalho das colunas do CSV
+        const cabecalho = ['Nome', 'Telefone', 'E-mail', 'Status', 'Observações'];
+
+        // Converte cada cliente em uma linha do CSV
+        const linhas = todosClientes.map(c => [
+            escaparCSV(c.nome),
+            escaparCSV(c.telefone),
+            escaparCSV(c.email),
+            escaparCSV(statusLabel[c.status] || c.status),
+            escaparCSV(c.observacoes)
+        ]);
+
+        // Junta cabeçalho e linhas separados por ponto e vírgula
+        // (ponto e vírgula é padrão no Excel brasileiro)
+        const csv = [cabecalho, ...linhas]
+            .map(linha => linha.join(';'))
+            .join('\n');
+
+        // Cria um link temporário para download do arquivo
+        const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+        const url  = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href     = url;
+        link.download = 'clientes_orbis.csv';
+        link.click();
+
+        // Libera a memória do link temporário
+        URL.revokeObjectURL(url);
+    }
+
+    // Escapa valores do CSV para evitar quebras por vírgulas ou aspas
+    function escaparCSV(valor) {
+        if (!valor) return '';
+        const str = String(valor);
+        // Se tiver ponto e vírgula, aspas ou quebra de linha, envolve em aspas
+        if (str.includes(';') || str.includes('"') || str.includes('\n')) {
+            return '"' + str.replace(/"/g, '""') + '"';
+        }
+        return str;
     }
 
     // ==========================================

@@ -1,6 +1,8 @@
 package com.kaique.crm_simples.service;
 
+import com.kaique.crm_simples.dto.AtualizarPerfilRequest;
 import com.kaique.crm_simples.exception.EmailJaCadastradoException;
+import com.kaique.crm_simples.exception.SenhasNaoCoincidemException;
 import com.kaique.crm_simples.exception.UsuarioNaoEncontradoException;
 import com.kaique.crm_simples.model.Usuario;
 import com.kaique.crm_simples.repository.UsuarioRepository;
@@ -41,7 +43,6 @@ public class UsuarioService {
     public Usuario salvar(Usuario usuario) {
 
         // Verifica se já existe outro usuário com esse e-mail
-        // Fazemos isso antes de salvar para dar uma mensagem clara
         boolean emailEmUso = repository
                 .findByEmail(usuario.getEmail())
                 .isPresent();
@@ -51,7 +52,6 @@ public class UsuarioService {
         }
 
         // Criptografa a senha antes de salvar no banco
-        // O BCrypt gera um hash diferente a cada vez, o que é seguro
         usuario.alterarSenha(
                 passwordEncoder.encode(usuario.getSenha())
         );
@@ -63,16 +63,58 @@ public class UsuarioService {
      * Busca um usuário pelo e-mail.
      *
      * Usamos Optional para evitar NullPointerException.
-     * Se não encontrar, lançamos nossa exceção customizada
-     * em vez de deixar o sistema quebrar sozinho.
+     * Se não encontrar, lançamos nossa exceção customizada.
      *
      * @param email e-mail do usuário.
      * @return usuário encontrado.
      */
     public Usuario buscarPorEmail(String email) {
 
-        // orElseThrow lança a exceção automaticamente se não encontrar
         return repository.findByEmail(email)
                 .orElseThrow(UsuarioNaoEncontradoException::new);
+    }
+
+    /**
+     * Atualiza o perfil do usuário autenticado.
+     *
+     * Permite alterar o nome e, opcionalmente, a senha.
+     * Se a nova senha vier preenchida, valida se as duas
+     * senhas coincidem antes de criptografar e salvar.
+     *
+     * @param email   e-mail do usuário autenticado (vem do token JWT).
+     * @param request novos dados do perfil.
+     * @return usuário atualizado.
+     */
+    public Usuario atualizarPerfil(String email, AtualizarPerfilRequest request) {
+
+        // Busca o usuário autenticado pelo e-mail do token
+        Usuario usuario = buscarPorEmail(email);
+
+        // Atualiza o nome sempre
+        usuario.setNome(request.getNome());
+
+        // Atualiza a senha apenas se uma nova senha foi informada
+        boolean novaSenhaInformada = request.getNovaSenha() != null
+                && !request.getNovaSenha().isBlank();
+
+        if (novaSenhaInformada) {
+
+            // Valida se a confirmação bate com a nova senha
+            if (!request.getNovaSenha().equals(request.getConfirmarSenha())) {
+                throw new SenhasNaoCoincidemException();
+            }
+
+            // Valida tamanho mínimo da nova senha
+            if (request.getNovaSenha().length() < 6) {
+                throw new RuntimeException("Senha deve ter no mínimo 6 caracteres.");
+            }
+
+            // Criptografa e salva a nova senha
+            usuario.alterarSenha(
+                    passwordEncoder.encode(request.getNovaSenha())
+            );
+        }
+
+        return repository.save(usuario);
     }
 }

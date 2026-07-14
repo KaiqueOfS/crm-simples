@@ -121,6 +121,21 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * Trata o caso em que as senhas não coincidem na atualização do perfil.
+     *
+     * @param ex exceção lançada pelo UsuarioService.
+     * @return mensagem de erro (HTTP 400).
+     */
+    @ExceptionHandler(SenhasNaoCoincidemException.class)
+    public ResponseEntity<Map<String, String>> tratarSenhasNaoCoincidem(
+            SenhasNaoCoincidemException ex) {
+
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(Map.of("erro", ex.getMessage()));
+    }
+
+    /**
      * Trata o caso em que um usuário não é encontrado pelo e-mail.
      *
      * @param ex exceção lançada pelo UsuarioService.
