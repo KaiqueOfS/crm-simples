@@ -33,8 +33,7 @@ public class AuthController {
             @RequestBody LoginRequest request) {
 
         Usuario usuario = usuarioService
-                .buscarPorEmail(request.getEmail())
-                .orElseThrow(UsuarioNaoEncontradoException::new);
+                .buscarPorEmail(request.getEmail());
 
         boolean senhaValida =
                 passwordEncoder.matches(

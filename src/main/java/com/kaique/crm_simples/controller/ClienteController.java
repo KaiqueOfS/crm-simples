@@ -1,12 +1,12 @@
 package com.kaique.crm_simples.controller;
 
-import com.kaique.crm_simples.repository.ClienteRepository;
+
 import com.kaique.crm_simples.model.Cliente;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import jakarta.validation.Valid;
 import com.kaique.crm_simples.service.ClienteService;
+import com.kaique.crm_simples.dto.StatusLeadRequest;
 
 // Controller responsável por gerenciar os clientes
 // recebe as requisições HTTP e retorna as respostas em JSON
@@ -21,35 +21,45 @@ public class ClienteController {
         this.service = service;
     }
 
-    // Listagem e busca
+    // Lista todos os clientes pertencentes ao usuário autenticado
     @GetMapping
     public List<Cliente> listar() {
         return service.listarTodos();
     }
 
+    // Busca um cliente específico pelo ID
     @GetMapping("/{id}")
     public Cliente buscarPorId(@PathVariable Long id) {
         return service.buscarPorId(id);
     }
 
-    // Cadastro de novo cliente
+    // Cadastra um novo cliente para o usuário autenticado
     @PostMapping
     public Cliente cadastrar(@Valid @RequestBody Cliente cliente) {
         return service.salvar(cliente);
     }
 
-    // Remoção de cliente por ID
+    // Remove um cliente
     @DeleteMapping("/{id}")
     public void deletar(@PathVariable Long id) {
         service.deletar(id);
     }
 
-    // Atualização dos dados de um cliente existente
+    // Atualiza os dados de um cliente
     @PutMapping("/{id}")
     public Cliente atualizar(
             @PathVariable Long id,
             @Valid @RequestBody Cliente clienteAtualizado) {
 
         return service.atualizar(id, clienteAtualizado);
+    }
+
+    // Atualiza apenas o status do lead dentro do funil de vendas
+    @PutMapping("/{id}/status")
+    public Cliente alterarStatus(
+            @PathVariable Long id,
+            @RequestBody StatusLeadRequest request) {
+
+        return service.alterarStatus(id, request);
     }
 }
