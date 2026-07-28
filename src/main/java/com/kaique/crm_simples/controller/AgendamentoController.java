@@ -1,6 +1,7 @@
 package com.kaique.crm_simples.controller;
 
-import com.kaique.crm_simples.model.Agendamento;
+import com.kaique.crm_simples.dto.AgendamentoRequest;
+import com.kaique.crm_simples.dto.AgendamentoResponse;
 import com.kaique.crm_simples.service.AgendamentoService;
 import jakarta.validation.Valid;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -34,7 +35,7 @@ public class AgendamentoController {
      * - sem parâmetros            → todos os agendamentos
      */
     @GetMapping
-    public List<Agendamento> listar(
+    public List<AgendamentoResponse> listar(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate data,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate inicio,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fim) {
@@ -56,26 +57,26 @@ public class AgendamentoController {
     /**
      * Cria um novo agendamento para o usuário autenticado.
      *
-     * @param agendamento dados do agendamento.
+     * @param request dados do agendamento.
      * @return agendamento criado.
      */
     @PostMapping
-    public Agendamento criar(@Valid @RequestBody Agendamento agendamento) {
-        return service.salvar(agendamento);
+    public AgendamentoResponse criar(@Valid @RequestBody AgendamentoRequest request) {
+        return service.salvar(request);
     }
 
     /**
      * Atualiza um agendamento existente.
      *
-     * @param id   identificador do agendamento.
-     * @param novo novos dados.
+     * @param id      identificador do agendamento.
+     * @param request novos dados.
      * @return agendamento atualizado.
      */
     @PutMapping("/{id}")
-    public Agendamento atualizar(
+    public AgendamentoResponse atualizar(
             @PathVariable Long id,
-            @Valid @RequestBody Agendamento novo) {
-        return service.atualizar(id, novo);
+            @Valid @RequestBody AgendamentoRequest request) {
+        return service.atualizar(id, request);
     }
 
     /**

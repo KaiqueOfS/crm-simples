@@ -102,6 +102,18 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * Trata excesso de tentativas de login (rate limiting por IP/e-mail).
+     * HTTP 429 Too Many Requests.
+     */
+    @ExceptionHandler(MuitasTentativasException.class)
+    public ResponseEntity<Map<String, String>> tratarMuitasTentativas(
+            MuitasTentativasException ex) {
+
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                .body(Map.of("erro", ex.getMessage()));
+    }
+
+    /**
      * Trata usuário não encontrado.
      * HTTP 404 Not Found.
      */

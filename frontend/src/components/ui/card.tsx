@@ -26,7 +26,6 @@ export const Card = React.forwardRef<
           "bg-card",
           "shadow-sm",
           "orbis-transition",
-          "hover:shadow-sm",
           className
         )}
         {...props}
@@ -86,7 +85,7 @@ export const CardDescription = ({
     <p
       className={cn(
         "text-sm",
-        "text-neutral-500",
+        "text-muted-foreground",
         className
       )}
       {...props}

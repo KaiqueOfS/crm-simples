@@ -20,10 +20,11 @@ export const Label = React.forwardRef<
       <label
         ref={ref}
         className={cn(
-          "text-sm",
+          "text-[13px]",
           "font-medium",
-          "text-neutral-700",
+          "text-foreground/90",
           "leading-none",
+          "tracking-wide",
           "peer-disabled:cursor-not-allowed",
           "peer-disabled:opacity-70",
           className

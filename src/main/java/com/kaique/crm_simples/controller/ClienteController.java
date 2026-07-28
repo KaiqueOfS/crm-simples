@@ -1,7 +1,8 @@
 package com.kaique.crm_simples.controller;
 
 
-import com.kaique.crm_simples.model.Cliente;
+import com.kaique.crm_simples.dto.ClienteRequest;
+import com.kaique.crm_simples.dto.ClienteResponse;
 import com.kaique.crm_simples.model.StatusLead;
 import com.kaique.crm_simples.dto.PaginaResponse;
 import org.springframework.web.bind.annotation.*;
@@ -24,7 +25,7 @@ public class ClienteController {
 
     // Lista todos os clientes pertencentes ao usuário autenticado
     @GetMapping
-    public PaginaResponse<Cliente> listar(
+    public PaginaResponse<ClienteResponse> listar(
             @RequestParam(defaultValue = "0") int pagina,
             @RequestParam(defaultValue = "20") int tamanho,
             @RequestParam(required = false) String termo,
@@ -37,14 +38,14 @@ public class ClienteController {
 
     // Busca um cliente específico pelo ID
     @GetMapping("/{id}")
-    public Cliente buscarPorId(@PathVariable Long id) {
+    public ClienteResponse buscarPorId(@PathVariable Long id) {
         return service.buscarPorId(id);
     }
 
     // Cadastra um novo cliente para o usuário autenticado
     @PostMapping
-    public Cliente cadastrar(@Valid @RequestBody Cliente cliente) {
-        return service.salvar(cliente);
+    public ClienteResponse cadastrar(@Valid @RequestBody ClienteRequest request) {
+        return service.salvar(request);
     }
 
     // Remove um cliente
@@ -55,16 +56,16 @@ public class ClienteController {
 
     // Atualiza os dados de um cliente
     @PutMapping("/{id}")
-    public Cliente atualizar(
+    public ClienteResponse atualizar(
             @PathVariable Long id,
-            @Valid @RequestBody Cliente clienteAtualizado) {
+            @Valid @RequestBody ClienteRequest request) {
 
-        return service.atualizar(id, clienteAtualizado);
+        return service.atualizar(id, request);
     }
 
     // Atualiza apenas o status do lead dentro do funil de vendas
     @PutMapping("/{id}/status")
-    public Cliente alterarStatus(
+    public ClienteResponse alterarStatus(
             @PathVariable Long id,
             @Valid @RequestBody StatusLeadRequest request) {
 

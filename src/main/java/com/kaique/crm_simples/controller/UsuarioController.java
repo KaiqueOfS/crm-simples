@@ -1,6 +1,7 @@
 package com.kaique.crm_simples.controller;
 
 import com.kaique.crm_simples.dto.AtualizarPerfilRequest;
+import com.kaique.crm_simples.dto.UsuarioResponse;
 import com.kaique.crm_simples.model.Usuario;
 import com.kaique.crm_simples.service.UsuarioService;
 import jakarta.validation.Valid;
@@ -30,11 +31,11 @@ public class UsuarioController {
      * Rota pública — não precisa de token JWT.
      *
      * @param usuario dados recebidos na requisição.
-     * @return usuário salvo.
+     * @return dados públicos do usuário salvo (nunca a senha).
      */
     @PostMapping
-    public Usuario cadastrar(@Valid @RequestBody Usuario usuario) {
-        return service.salvar(usuario);
+    public UsuarioResponse cadastrar(@Valid @RequestBody Usuario usuario) {
+        return UsuarioResponse.de(service.salvar(usuario));
     }
 
     /**
@@ -46,11 +47,11 @@ public class UsuarioController {
      * @return dados do usuário autenticado.
      */
     @GetMapping("/perfil")
-    public Usuario perfil() {
+    public UsuarioResponse perfil() {
 
         // Obtém o e-mail do token JWT via SecurityContext
         String email = getEmailAutenticado();
-        return service.buscarPorEmail(email);
+        return UsuarioResponse.de(service.buscarPorEmail(email));
     }
 
     /**
@@ -63,10 +64,10 @@ public class UsuarioController {
      * @return usuário atualizado.
      */
     @PutMapping("/perfil")
-    public Usuario atualizarPerfil(@Valid @RequestBody AtualizarPerfilRequest request) {
+    public UsuarioResponse atualizarPerfil(@Valid @RequestBody AtualizarPerfilRequest request) {
 
         String email = getEmailAutenticado();
-        return service.atualizarPerfil(email, request);
+        return UsuarioResponse.de(service.atualizarPerfil(email, request));
     }
 
     /**

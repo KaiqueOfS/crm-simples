@@ -4,7 +4,11 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 
 /**
@@ -49,6 +53,17 @@ public class Agendamento {
     @JsonIgnoreProperties({"senha"})
     private Usuario usuario;
 
+    // Preenchido automaticamente pelo Hibernate na criação — nunca
+    // definido pela aplicação, por isso não existe setter.
+    @CreationTimestamp
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+
+    // Atualizado automaticamente pelo Hibernate a cada UPDATE.
+    @UpdateTimestamp
+    @Column(name = "updated_at", nullable = false)
+    private LocalDateTime updatedAt;
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
@@ -73,16 +88,6 @@ public class Agendamento {
     public Usuario getUsuario() { return usuario; }
     public void setUsuario(Usuario usuario) { this.usuario = usuario; }
 
-    /**
-     * Atualiza os dados do agendamento.
-     * O usuário não é alterado — pertence sempre ao criador.
-     */
-    public void atualizarDados(Agendamento novo) {
-        this.titulo    = novo.getTitulo();
-        this.pessoa    = novo.getPessoa();
-        this.data      = novo.getData();
-        this.hora      = novo.getHora();
-        this.categoria = novo.getCategoria();
-        this.lembrete  = novo.getLembrete();
-    }
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public LocalDateTime getUpdatedAt() { return updatedAt; }
 }

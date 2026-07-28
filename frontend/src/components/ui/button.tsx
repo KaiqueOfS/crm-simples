@@ -35,19 +35,19 @@ export function Button({
   const variants = {
 
     primary:
-    "bg-orbis-blue text-white hover:opacity-90",
+    "bg-orbis-blue text-white shadow-sm hover:opacity-90 active:opacity-95",
 
     secondary:
-    "bg-surface-2 text-foreground hover:bg-surface-3",
+    "bg-surface-2 text-foreground border border-border hover:bg-surface-3",
 
     outline:
-      "border border-neutral-300 bg-white hover:bg-neutral-50",
+      "border border-border-strong bg-transparent text-foreground hover:bg-accent hover:border-border-strong",
 
     ghost:
-      "hover:bg-neutral-100",
+      "text-foreground hover:bg-accent",
 
     danger:
-      "bg-red-500 text-white hover:bg-red-600"
+      "bg-orbis-red text-white shadow-sm hover:opacity-90 active:opacity-95"
 
   };
 
@@ -77,8 +77,8 @@ export function Button({
         "orbis-transition",
         "duration-200",
         "focus:outline-none",
-        "focus:ring-2",
-        "focus:ring-neutral-300",
+        "focus:ring-4",
+        "focus:ring-ring/20",
         "disabled:cursor-not-allowed",
         "disabled:opacity-50",
         variants[variant],

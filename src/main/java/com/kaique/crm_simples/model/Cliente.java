@@ -5,6 +5,10 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+
+import java.time.LocalDateTime;
 
 /**
  * Entidade que representa um cliente cadastrado no CRM.
@@ -50,6 +54,17 @@ public class Cliente {
     @JoinColumn(name = "usuario_id")
     @JsonIgnoreProperties({"senha"})
     private Usuario usuario;
+
+    // Preenchido automaticamente pelo Hibernate na criação — nunca
+    // definido pela aplicação, por isso não existe setter.
+    @CreationTimestamp
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+
+    // Atualizado automaticamente pelo Hibernate a cada UPDATE.
+    @UpdateTimestamp
+    @Column(name = "updated_at", nullable = false)
+    private LocalDateTime updatedAt;
 
     public Long getId() {
         return id;
@@ -107,18 +122,11 @@ public class Cliente {
         this.status = status;
     }
 
-    /**
-     * Atualiza apenas os dados cadastrais do cliente.
-     *
-     * O status do funil não é alterado por este método,
-     * pois possui um endpoint específico para isso.
-     *
-     * @param clienteAtualizado novos dados do cliente.
-     */
-    public void atualizarDados(Cliente clienteAtualizado) {
-        this.nome        = clienteAtualizado.getNome();
-        this.telefone    = clienteAtualizado.getTelefone();
-        this.email       = clienteAtualizado.getEmail();
-        this.observacoes = clienteAtualizado.getObservacoes();
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
     }
 }

@@ -17,22 +17,26 @@ export default function Perfil() {
   const [novaSenha, setNovaSenha] = useState("");
   const [confirmarSenha, setConfirmarSenha] = useState("");
   const [carregando, setCarregando] = useState(true);
+  const [erro, setErro] = useState<string | null>(null);
   const [salvando, setSalvando] = useState(false);
 
   useEffect(() => {
-    async function carregar() {
-      try {
-        const perfil = await usuariosApi.perfil();
-        setUsuario(perfil);
-        setNome(perfil.nome);
-      } catch (err) {
-        toast.error(err instanceof Error ? err.message : "Erro ao carregar perfil");
-      } finally {
-        setCarregando(false);
-      }
-    }
-    void carregar();
+    void carregarPerfil();
   }, []);
+
+  async function carregarPerfil() {
+    setCarregando(true);
+    setErro(null);
+    try {
+      const perfil = await usuariosApi.perfil();
+      setUsuario(perfil);
+      setNome(perfil.nome);
+    } catch (err) {
+      setErro(err instanceof Error ? err.message : "Não foi possível carregar o perfil.");
+    } finally {
+      setCarregando(false);
+    }
+  }
 
   async function salvar(evento: React.FormEvent) {
     evento.preventDefault();
@@ -67,7 +71,16 @@ export default function Perfil() {
       <Card>
         <CardHeader><CardTitle className="text-base">Dados da conta</CardTitle></CardHeader>
         <CardContent>
-          {carregando ? (
+          {erro ? (
+            <div className="flex flex-col items-center justify-center py-10 text-center">
+              <p className="mb-2 text-3xl">⚠️</p>
+              <p className="text-sm font-medium text-foreground">Não foi possível carregar o perfil</p>
+              <p className="mt-1 text-xs text-muted-foreground">{erro}</p>
+              <Button variant="outline" size="sm" className="mt-4" onClick={() => void carregarPerfil()}>
+                Tentar novamente
+              </Button>
+            </div>
+          ) : carregando ? (
             <p className="text-sm text-muted-foreground">Carregando perfil…</p>
           ) : usuario ? (
             <form onSubmit={salvar} className="space-y-4">
@@ -100,9 +113,7 @@ export default function Perfil() {
 
               <Button type="submit" disabled={salvando}>{salvando ? "Salvando…" : "Salvar alterações"}</Button>
             </form>
-          ) : (
-            <p className="text-sm text-muted-foreground">Não foi possível carregar o perfil.</p>
-          )}
+          ) : null}
         </CardContent>
       </Card>
     </div>

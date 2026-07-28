@@ -1,5 +1,7 @@
 package com.kaique.crm_simples.service;
 
+import com.kaique.crm_simples.dto.AgendamentoRequest;
+import com.kaique.crm_simples.dto.AgendamentoResponse;
 import com.kaique.crm_simples.exception.AcessoNegadoException;
 import com.kaique.crm_simples.exception.AgendamentoNaoEncontradoException;
 import com.kaique.crm_simples.model.Agendamento;
@@ -16,11 +18,14 @@ import java.util.List;
  * Serviço responsável pelas regras de negócio dos agendamentos.
  *
  * Cada usuário só pode ver e editar seus próprios agendamentos.
+ *
+ * Fronteira DTO ↔ entidade: este service é o único lugar que converte
+ * AgendamentoRequest em Agendamento e Agendamento em AgendamentoResponse.
+ * O dono (usuario) nunca vem do request (ver docs/DTO-ARCHITECTURE.md).
  */
 @Service
 public class AgendamentoService {
 
-    // Logger para registrar operações importantes em produção
     private static final Logger log = LoggerFactory.getLogger(AgendamentoService.class);
 
     private final AgendamentoRepository repository;
@@ -37,70 +42,76 @@ public class AgendamentoService {
      * Lista todos os agendamentos do usuário autenticado.
      * Ordenados por data e hora crescente.
      */
-    public List<Agendamento> listarTodos() {
+    public List<AgendamentoResponse> listarTodos() {
         Usuario usuario = usuarioAutenticadoService.obterUsuarioLogado();
-        return repository.findByUsuarioOrderByDataAscHoraAsc(usuario);
+        return repository.findByUsuarioOrderByDataAscHoraAsc(usuario).stream()
+                .map(AgendamentoResponse::de)
+                .toList();
     }
 
     /**
      * Lista agendamentos do usuário em uma data específica.
      * Usado para exibir a agenda do dia.
-     *
-     * @param data data a ser consultada.
      */
-    public List<Agendamento> listarPorData(LocalDate data) {
+    public List<AgendamentoResponse> listarPorData(LocalDate data) {
         Usuario usuario = usuarioAutenticadoService.obterUsuarioLogado();
-        return repository.findByUsuarioAndDataOrderByHoraAsc(usuario, data);
+        return repository.findByUsuarioAndDataOrderByHoraAsc(usuario, data).stream()
+                .map(AgendamentoResponse::de)
+                .toList();
     }
 
     /**
      * Lista agendamentos do usuário em um intervalo de datas.
      * Usado para exibir a agenda da semana.
-     *
-     * @param inicio data inicial.
-     * @param fim    data final.
      */
-    public List<Agendamento> listarPorPeriodo(LocalDate inicio, LocalDate fim) {
+    public List<AgendamentoResponse> listarPorPeriodo(LocalDate inicio, LocalDate fim) {
         Usuario usuario = usuarioAutenticadoService.obterUsuarioLogado();
-        return repository.findByUsuarioAndDataBetweenOrderByDataAscHoraAsc(usuario, inicio, fim);
+        return repository.findByUsuarioAndDataBetweenOrderByDataAscHoraAsc(usuario, inicio, fim).stream()
+                .map(AgendamentoResponse::de)
+                .toList();
     }
 
     /**
      * Cria um novo agendamento para o usuário autenticado.
      *
-     * @param agendamento dados do agendamento.
-     * @return agendamento salvo.
+     * O request não tem campo "usuario" — o dono é sempre o usuário
+     * autenticado, nunca algo vindo do corpo da requisição.
      */
-    public Agendamento salvar(Agendamento agendamento) {
+    public AgendamentoResponse salvar(AgendamentoRequest request) {
         Usuario usuario = usuarioAutenticadoService.obterUsuarioLogado();
 
-        // Vincula o agendamento ao usuário logado
+        Agendamento agendamento = new Agendamento();
+        agendamento.setTitulo(request.getTitulo());
+        agendamento.setPessoa(request.getPessoa());
+        agendamento.setData(request.getData());
+        agendamento.setHora(request.getHora());
+        agendamento.setCategoria(request.getCategoria());
+        agendamento.setLembrete(request.getLembrete());
         agendamento.setUsuario(usuario);
 
         Agendamento salvo = repository.save(agendamento);
         log.info("Agendamento criado: id={} usuario={}", salvo.getId(), usuario.getEmail());
-        return salvo;
+        return AgendamentoResponse.de(salvo);
     }
 
     /**
      * Atualiza um agendamento existente.
      * Garante que o agendamento pertence ao usuário autenticado.
-     *
-     * @param id   identificador do agendamento.
-     * @param novo novos dados.
-     * @return agendamento atualizado.
      */
-    public Agendamento atualizar(Long id, Agendamento novo) {
+    public AgendamentoResponse atualizar(Long id, AgendamentoRequest request) {
         Agendamento agendamento = buscarDoUsuario(id);
-        agendamento.atualizarDados(novo);
-        return repository.save(agendamento);
+        agendamento.setTitulo(request.getTitulo());
+        agendamento.setPessoa(request.getPessoa());
+        agendamento.setData(request.getData());
+        agendamento.setHora(request.getHora());
+        agendamento.setCategoria(request.getCategoria());
+        agendamento.setLembrete(request.getLembrete());
+        return AgendamentoResponse.de(repository.save(agendamento));
     }
 
     /**
      * Remove um agendamento.
      * Garante que o agendamento pertence ao usuário autenticado.
-     *
-     * @param id identificador do agendamento.
      */
     public void deletar(Long id) {
         Agendamento agendamento = buscarDoUsuario(id);
@@ -111,9 +122,6 @@ public class AgendamentoService {
     /**
      * Busca um agendamento garantindo que ele pertença ao usuário autenticado.
      * Lança exceção se não encontrar ou se pertencer a outro usuário.
-     *
-     * @param id identificador do agendamento.
-     * @return agendamento encontrado.
      */
     private Agendamento buscarDoUsuario(Long id) {
         Usuario usuario = usuarioAutenticadoService.obterUsuarioLogado();

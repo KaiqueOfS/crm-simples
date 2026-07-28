@@ -18,7 +18,7 @@ CRM simples para pequenos negócios acompanharem clientes, oportunidades e agend
 | Camada | Tecnologias |
 | --- | --- |
 | Backend | Java 21, Spring Boot, Spring Security, Spring Data JPA, JWT, BCrypt e Maven |
-| Banco de dados | MySQL em produção e H2 em memória nos testes |
+| Banco de dados | MySQL em produção e H2 em memória nos testes, com schema versionado via Flyway |
 | Frontend | React 19, TypeScript, Vite, Tailwind CSS, Radix UI e React Router |
 
 ## Estrutura do projeto
@@ -43,6 +43,7 @@ crm-simples/
 │   └── service/                       # Regras de negócio
 ├── src/main/resources/
 │   ├── application.properties         # Configuração da aplicação
+│   ├── db/migration/                  # Migrations do Flyway (schema versionado)
 │   └── static/                        # Build do frontend servido pelo Spring
 ├── src/test/                          # Testes e configuração do banco H2
 └── docs/                              # Documentação técnica
@@ -130,6 +131,14 @@ Todas as rotas abaixo começam com `/api`. As rotas marcadas como **Sim** exigem
 | PUT | `/agendamentos/{id}` | Atualiza um agendamento | Sim |
 | DELETE | `/agendamentos/{id}` | Remove um agendamento | Sim |
 
+## Banco de dados e migrations
+
+O schema do banco é versionado com [Flyway](https://flywaydb.org/) — o Hibernate **nunca** cria ou altera tabelas (`spring.jpa.hibernate.ddl-auto=validate` em todos os ambientes, produção e teste). Ele só confere se as entidades JPA batem com o schema que o Flyway já aplicou; se não baterem, a aplicação falha ao subir em vez de alterar o banco silenciosamente.
+
+- **Onde ficam as migrations:** `src/main/resources/db/migration/`, arquivos `V{numero}__{descricao}.sql` (ex.: `V1__init.sql`). O Flyway aplica em ordem crescente de versão, uma única vez cada, e registra o histórico na tabela `flyway_schema_history`.
+- **Como criar uma nova migration:** nunca edite um arquivo `V*.sql` já aplicado (em produção ou já commitado). Crie um novo arquivo com o próximo número — ex. `V2__adiciona_campo_x.sql` — com o `ALTER TABLE`/`CREATE TABLE` necessário. Ele será aplicado automaticamente na próxima inicialização da aplicação, em qualquer ambiente (produção, dev, CI).
+- **Regra permanente:** `ddl-auto=update` (ou `create`/`create-drop` fora de teste) nunca deve voltar a ser usado em produção. Toda mudança de schema entra por uma migration nova, revisável e reproduzível. Detalhes de por que isso importa e como o fluxo de inicialização funciona: [`docs/FLYWAY.md`](docs/FLYWAY.md).
+
 ## Qualidade
 
 ```bash
@@ -148,7 +157,6 @@ npm exec tsc -- --noEmit
 - Histórico de interações por cliente
 - Papéis e permissões para ações administrativas, como exclusões
 - Testes de API para complementar os testes de regras de negócio
-- Migrações versionadas de banco com Flyway ou Liquibase
 
 ## Autor
 

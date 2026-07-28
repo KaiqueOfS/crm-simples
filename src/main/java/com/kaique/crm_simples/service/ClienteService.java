@@ -1,5 +1,7 @@
 package com.kaique.crm_simples.service;
 
+import com.kaique.crm_simples.dto.ClienteRequest;
+import com.kaique.crm_simples.dto.ClienteResponse;
 import com.kaique.crm_simples.dto.StatusLeadRequest;
 import com.kaique.crm_simples.dto.PaginaResponse;
 import com.kaique.crm_simples.exception.AcessoNegadoException;
@@ -11,12 +13,18 @@ import com.kaique.crm_simples.repository.ClienteRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 
 /**
  * Serviço responsável pelas regras de negócio dos clientes.
+ *
+ * Fronteira DTO ↔ entidade: este service é o único lugar que converte
+ * ClienteRequest em Cliente e Cliente em ClienteResponse. O dono
+ * (usuario) nunca vem do request — é sempre atribuído aqui a partir
+ * do usuário autenticado (ver docs/DTO-ARCHITECTURE.md).
  */
 @Service
 public class ClienteService {
@@ -36,37 +44,49 @@ public class ClienteService {
     /**
      * Lista todos os clientes do usuário autenticado.
      */
-    public PaginaResponse<Cliente> listarTodos(int pagina, int tamanho, String termo, StatusLead status) {
+    public PaginaResponse<ClienteResponse> listarTodos(int pagina, int tamanho, String termo, StatusLead status) {
         Usuario usuario = usuarioAutenticadoService.obterUsuarioLogado();
         Pageable pageable = PageRequest.of(pagina, tamanho, Sort.by("nome").ascending());
 
+        Page<Cliente> resultado;
         if (status != null) {
-            return PaginaResponse.de(repository.findByUsuarioAndStatus(usuario, status, pageable));
+            resultado = repository.findByUsuarioAndStatus(usuario, status, pageable);
+        } else if (termo != null && !termo.isBlank()) {
+            resultado = repository.buscarPorUsuarioETermo(usuario, termo.trim(), pageable);
+        } else {
+            resultado = repository.findByUsuario(usuario, pageable);
         }
 
-        if (termo != null && !termo.isBlank()) {
-            return PaginaResponse.de(repository.buscarPorUsuarioETermo(usuario, termo.trim(), pageable));
-        }
-
-        return PaginaResponse.de(repository.findByUsuario(usuario, pageable));
+        return PaginaResponse.de(resultado.map(ClienteResponse::de));
     }
 
     /**
      * Busca um cliente pelo ID, garantindo que pertence ao usuário autenticado.
      */
-    public Cliente buscarPorId(Long id) {
-        return buscarClienteDoUsuario(id);
+    public ClienteResponse buscarPorId(Long id) {
+        return ClienteResponse.de(buscarClienteDoUsuario(id));
     }
 
     /**
      * Salva um novo cliente vinculado ao usuário autenticado.
+     *
+     * O request não tem campo "usuario" — o dono é sempre o usuário
+     * autenticado, nunca algo vindo do corpo da requisição.
      */
-    public Cliente salvar(Cliente cliente) {
+    public ClienteResponse salvar(ClienteRequest request) {
         Usuario usuario = usuarioAutenticadoService.obterUsuarioLogado();
+
+        Cliente cliente = new Cliente();
+        cliente.setNome(request.getNome());
+        cliente.setTelefone(request.getTelefone());
+        cliente.setEmail(request.getEmail());
+        cliente.setObservacoes(request.getObservacoes());
+        cliente.setStatus(request.getStatusLead());
         cliente.setUsuario(usuario);
+
         Cliente salvo = repository.save(cliente);
         log.info("Cliente criado: id={} usuario={}", salvo.getId(), usuario.getEmail());
-        return salvo;
+        return ClienteResponse.de(salvo);
     }
 
     /**
@@ -82,19 +102,22 @@ public class ClienteService {
      * Atualiza os dados cadastrais de um cliente.
      * O status não é alterado aqui — tem endpoint próprio.
      */
-    public Cliente atualizar(Long id, Cliente clienteAtualizado) {
+    public ClienteResponse atualizar(Long id, ClienteRequest request) {
         Cliente cliente = buscarClienteDoUsuario(id);
-        cliente.atualizarDados(clienteAtualizado);
-        return repository.save(cliente);
+        cliente.setNome(request.getNome());
+        cliente.setTelefone(request.getTelefone());
+        cliente.setEmail(request.getEmail());
+        cliente.setObservacoes(request.getObservacoes());
+        return ClienteResponse.de(repository.save(cliente));
     }
 
     /**
      * Atualiza o status do cliente no funil de vendas.
      */
-    public Cliente alterarStatus(Long id, StatusLeadRequest request) {
+    public ClienteResponse alterarStatus(Long id, StatusLeadRequest request) {
         Cliente cliente = buscarClienteDoUsuario(id);
         cliente.setStatus(request.getStatus());
-        return repository.save(cliente);
+        return ClienteResponse.de(repository.save(cliente));
     }
 
     /**
