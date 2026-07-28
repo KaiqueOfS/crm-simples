@@ -2,8 +2,9 @@ package com.kaique.crm_simples.controller;
 
 
 import com.kaique.crm_simples.model.Cliente;
+import com.kaique.crm_simples.model.StatusLead;
+import com.kaique.crm_simples.dto.PaginaResponse;
 import org.springframework.web.bind.annotation.*;
-import java.util.List;
 import jakarta.validation.Valid;
 import com.kaique.crm_simples.service.ClienteService;
 import com.kaique.crm_simples.dto.StatusLeadRequest;
@@ -11,7 +12,7 @@ import com.kaique.crm_simples.dto.StatusLeadRequest;
 // Controller responsável por gerenciar os clientes
 // recebe as requisições HTTP e retorna as respostas em JSON
 @RestController
-@RequestMapping("/clientes")
+@RequestMapping("/api/clientes")
 public class ClienteController {
 
 
@@ -23,8 +24,15 @@ public class ClienteController {
 
     // Lista todos os clientes pertencentes ao usuário autenticado
     @GetMapping
-    public List<Cliente> listar() {
-        return service.listarTodos();
+    public PaginaResponse<Cliente> listar(
+            @RequestParam(defaultValue = "0") int pagina,
+            @RequestParam(defaultValue = "20") int tamanho,
+            @RequestParam(required = false) String termo,
+            @RequestParam(required = false) StatusLead status) {
+
+        int paginaSegura = Math.max(pagina, 0);
+        int tamanhoSeguro = Math.clamp(tamanho, 1, 100);
+        return service.listarTodos(paginaSegura, tamanhoSeguro, termo, status);
     }
 
     // Busca um cliente específico pelo ID
@@ -58,7 +66,7 @@ public class ClienteController {
     @PutMapping("/{id}/status")
     public Cliente alterarStatus(
             @PathVariable Long id,
-            @RequestBody StatusLeadRequest request) {
+            @Valid @RequestBody StatusLeadRequest request) {
 
         return service.alterarStatus(id, request);
     }

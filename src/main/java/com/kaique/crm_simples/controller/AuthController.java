@@ -11,7 +11,7 @@ import com.kaique.crm_simples.config.JwtService;
 import com.kaique.crm_simples.dto.TokenResponse;
 
 @RestController
-@RequestMapping("/auth")
+@RequestMapping("/api/auth")
 public class AuthController {
 
     private final UsuarioService usuarioService;
@@ -32,8 +32,16 @@ public class AuthController {
     public TokenResponse login(
             @RequestBody LoginRequest request) {
 
-        Usuario usuario = usuarioService
-                .buscarPorEmail(request.getEmail());
+        // Não diferenciamos "email não existe" de "senha errada":
+        // ambos retornam a mesma exceção (401 genérico). Isso evita
+        // que alguém descubra, por tentativa e erro, quais e-mails
+        // já têm conta cadastrada no sistema (user enumeration).
+        Usuario usuario;
+        try {
+            usuario = usuarioService.buscarPorEmail(request.getEmail());
+        } catch (UsuarioNaoEncontradoException e) {
+            throw new CredenciaisInvalidasException();
+        }
 
         boolean senhaValida =
                 passwordEncoder.matches(

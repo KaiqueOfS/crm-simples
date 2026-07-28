@@ -1,5 +1,6 @@
 package com.kaique.crm_simples.model;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -31,54 +32,38 @@ public class Usuario {
     @Column(unique = true)
     private String email;
 
-    // Senha do usuário — deve ter no mínimo 6 caracteres
-    // O valor armazenado no banco é sempre o hash BCrypt
+    // Senha criptografada com BCrypt.
+    // WRITE_ONLY = aceita na entrada (cadastro/login) mas NUNCA retorna na resposta JSON.
+    // Isso impede que o hash vaze para o cliente mesmo que o token seja interceptado.
     @NotBlank(message = "Senha é obrigatória")
     @Size(min = 6, message = "Senha deve ter no mínimo 6 caracteres")
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String senha;
 
-    public Long getId() {
-        return id;
-    }
+    public Long getId() { return id; }
 
-    public String getNome() {
-        return nome;
-    }
+    public String getNome() { return nome; }
 
     /**
      * Atualiza o nome do usuário.
-     *
      * @param nome novo nome.
      */
-    public void setNome(String nome) {
-        this.nome = nome;
-    }
+    public void setNome(String nome) { this.nome = nome; }
 
-    public String getEmail() {
-        return email;
-    }
+    public String getEmail() { return email; }
 
     /**
      * Atualiza o e-mail do usuário.
-     *
      * @param email novo e-mail.
      */
-    public void setEmail(String email) {
-        this.email = email;
-    }
+    public void setEmail(String email) { this.email = email; }
 
-    public String getSenha() {
-        return senha;
-    }
+    public String getSenha() { return senha; }
 
     /**
      * Atualiza a senha do usuário.
-     *
-     * Este método deve receber a senha já criptografada.
-     *
-     * @param senhaCriptografada senha criptografada via BCrypt.
+     * Este método deve receber a senha já criptografada via BCrypt.
+     * @param senhaCriptografada senha criptografada.
      */
-    public void alterarSenha(String senhaCriptografada) {
-        this.senha = senhaCriptografada;
-    }
+    public void alterarSenha(String senhaCriptografada) { this.senha = senhaCriptografada; }
 }

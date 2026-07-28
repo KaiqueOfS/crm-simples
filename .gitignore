@@ -31,4 +31,27 @@ build/
 
 ### VS Code ###
 .vscode/
+
+# Artefatos locais do frontend
+**/node_modules/
+**/dist/
+*.log
+
+# Variáveis de ambiente locais
 .env
+.env.local
+**/.env.local
+
+# Ferramentas locais
+.agents/
+.codex/
+.idea/
+
+# Dependências
+frontend/node_modules/
+
+# Arquivos locais
+frontend/.env
+
+# Logs
+*.log

@@ -11,9 +11,12 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 /**
  * Configuração de segurança da aplicação.
  *
- * Define quais rotas são públicas e quais exigem autenticação.
- * Também desativa a sessão HTTP (usamos JWT no lugar)
- * e registra o filtro que valida o token a cada requisição.
+ * Todas as rotas de API vivem sob /api/**. Tudo que não é /api/** é
+ * o front-end React (arquivos estáticos ou rotas do React Router que
+ * caem no fallback do SpaFallbackController) e fica liberado, porque
+ * o próprio HTML da tela precisa carregar sem token — quem exige
+ * token são as chamadas fetch() para /api/**, feitas pelo JavaScript
+ * com o header Authorization.
  */
 @Configuration
 public class SecurityConfig {
@@ -31,6 +34,7 @@ public class SecurityConfig {
         http
                 // Desativa CSRF — não precisamos porque usamos JWT,
                 // não cookies de sessão
+                .cors(cors -> {})
                 .csrf(csrf -> csrf.disable())
 
                 // Define que a aplicação não guarda sessão no servidor.
@@ -41,24 +45,19 @@ public class SecurityConfig {
 
                 .authorizeHttpRequests(auth -> auth
 
-                        // Rotas públicas — não precisam de token
-                        .requestMatchers("/auth/**").permitAll()
+                        // Rotas públicas de autenticação
+                        .requestMatchers("/api/auth/**").permitAll()
 
                         // Apenas o cadastro de usuário é público
-                        // GET /usuarios foi removido por segurança
-                        .requestMatchers(HttpMethod.POST, "/usuarios").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/usuarios").permitAll()
 
-                        // Arquivos estáticos do front-end
-                        .requestMatchers(
-                                "/",
-                                "/index.html",
-                                "/*.html",
-                                "/*.css",
-                                "/*.js"
-                        ).permitAll()
+                        // Qualquer outra rota de API exige token
+                        .requestMatchers("/api/**").authenticated()
 
-                        // Todas as outras rotas exigem autenticação
-                        .anyRequest().authenticated())
+                        // Tudo que não é /api/** é o front-end (HTML/JS/CSS
+                        // servidos como estático, ou rota do React Router
+                        // que cai no fallback do SpaFallbackController)
+                        .anyRequest().permitAll())
 
                 // Registra o filtro JWT antes do filtro padrão do Spring Security
                 // Isso garante que o token seja validado em toda requisição

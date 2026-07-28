@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.*;
  * atualização do perfil do usuário autenticado.
  */
 @RestController
-@RequestMapping("/usuarios")
+@RequestMapping("/api/usuarios")
 public class UsuarioController {
 
     private final UsuarioService service;
