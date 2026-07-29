@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { AlertTriangle } from "lucide-react";
 import { type Usuario, usuariosApi } from "@/lib/api";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
@@ -73,7 +74,7 @@ export default function Perfil() {
         <CardContent>
           {erro ? (
             <div className="flex flex-col items-center justify-center py-10 text-center">
-              <p className="mb-2 text-3xl">⚠️</p>
+              <AlertTriangle className="mb-2 h-8 w-8 text-orbis-red/70" strokeWidth={1.5} />
               <p className="text-sm font-medium text-foreground">Não foi possível carregar o perfil</p>
               <p className="mt-1 text-xs text-muted-foreground">{erro}</p>
               <Button variant="outline" size="sm" className="mt-4" onClick={() => void carregarPerfil()}>

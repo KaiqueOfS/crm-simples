@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Calendar, FileText, Undo2, Wallet, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/layout/PageHeader";
 
@@ -88,7 +89,7 @@ function dataPorExtenso(): string {
 }
 
 interface CardMetricaProps {
-  icone: string;
+  icone: LucideIcon;
   rotulo: string;
   valor: string | number;
   detalhe?: string;
@@ -97,12 +98,12 @@ interface CardMetricaProps {
   corFundoIcone: string;
 }
 
-function CardMetrica({ icone, rotulo, valor, detalhe, corValor, corPonto, corFundoIcone }: CardMetricaProps) {
+function CardMetrica({ icone: Icone, rotulo, valor, detalhe, corValor, corPonto, corFundoIcone }: CardMetricaProps) {
   return (
     <div className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-4 orbis-transition hover:shadow-sm">
       <div className="flex items-center justify-between">
-        <div className={cn("flex h-8 w-8 items-center justify-center rounded-xl text-base", corFundoIcone)}>
-          {icone}
+        <div className={cn("flex h-8 w-8 items-center justify-center rounded-xl", corFundoIcone, corValor)}>
+          <Icone className="h-4 w-4" strokeWidth={1.75} />
         </div>
         <div className={cn("h-1.5 w-1.5 rounded-full", corPonto)} />
       </div>
@@ -128,17 +129,17 @@ export default function Hoje() {
 
       <div className="mb-8">
         <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-          {saudacao()}, tudo pronto para hoje? 👋
+          {saudacao()}, tudo pronto para hoje?
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">{dataPorExtenso()}</p>
       </div>
 
       {/* Métricas do dia */}
       <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <CardMetrica icone="📅" rotulo="Compromissos hoje"    valor={TAREFAS.length} detalhe={`Próximo às ${proximaTarefa.hora}`} corValor="text-orbis-blue"   corPonto="bg-orbis-blue"   corFundoIcone="bg-orbis-blue-tint" />
-        <CardMetrica icone="💰" rotulo="Pagamentos a receber" valor="R$ 1.200"        detalhe="2 em atraso"                       corValor="text-orbis-red"    corPonto="bg-orbis-red"    corFundoIcone="bg-orbis-red-tint" />
-        <CardMetrica icone="📄" rotulo="Orçamentos pendentes" valor={3}               detalhe="R$ 9.000 em aberto"                corValor="text-orbis-amber"  corPonto="bg-orbis-amber"  corFundoIcone="bg-orbis-amber-tint" />
-        <CardMetrica icone="↩️" rotulo="Clientes aguardando"  valor={2}               detalhe="Retorno pendente"                  corValor="text-orbis-purple" corPonto="bg-orbis-purple" corFundoIcone="bg-orbis-purple-tint" />
+        <CardMetrica icone={Calendar} rotulo="Compromissos hoje"    valor={TAREFAS.length} detalhe={`Próximo às ${proximaTarefa.hora}`} corValor="text-orbis-blue"   corPonto="bg-orbis-blue"   corFundoIcone="bg-orbis-blue-tint" />
+        <CardMetrica icone={Wallet}   rotulo="Pagamentos a receber" valor="R$ 1.200"        detalhe="2 em atraso"                       corValor="text-orbis-red"    corPonto="bg-orbis-red"    corFundoIcone="bg-orbis-red-tint" />
+        <CardMetrica icone={FileText} rotulo="Orçamentos pendentes" valor={3}               detalhe="R$ 9.000 em aberto"                corValor="text-orbis-amber"  corPonto="bg-orbis-amber"  corFundoIcone="bg-orbis-amber-tint" />
+        <CardMetrica icone={Undo2}    rotulo="Clientes aguardando"  valor={2}               detalhe="Retorno pendente"                  corValor="text-orbis-purple" corPonto="bg-orbis-purple" corFundoIcone="bg-orbis-purple-tint" />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-[1fr_340px]">

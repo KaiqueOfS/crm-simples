@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
+import { AlertTriangle, FileText, Users } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Avatar } from "@/components/ui/avatar-inicial";
@@ -22,7 +23,7 @@ const STATUS_CFG: Record<Status, { rotulo: string; selo: string }> = {
   CONTATADO:  { rotulo: "Aguardando resp.", selo: "bg-orbis-purple-tint text-orbis-purple" },
   NEGOCIACAO: { rotulo: "Em conversa",      selo: "bg-orbis-amber-tint text-orbis-amber"   },
   PROPOSTA:   { rotulo: "Proposta enviada", selo: "bg-orbis-blue-tint text-orbis-blue"     },
-  GANHO:      { rotulo: "Fechado ✓",        selo: "bg-orbis-green-tint text-orbis-green"   },
+  GANHO:      { rotulo: "Fechado",          selo: "bg-orbis-green-tint text-orbis-green"   },
   PERDIDO:    { rotulo: "Não fechou",       selo: "bg-orbis-red-tint text-orbis-red"       },
 };
 
@@ -182,7 +183,7 @@ export default function Clientes() {
       {/* Conteúdo */}
       {erro ? (
         <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-orbis-red-tint py-20 text-center">
-          <p className="mb-2 text-3xl">⚠️</p>
+          <AlertTriangle className="mb-2 h-8 w-8 text-orbis-red/70" strokeWidth={1.5} />
           <p className="text-sm font-medium text-foreground">Não foi possível carregar os clientes</p>
           <p className="mt-1 text-xs text-muted-foreground">{erro}</p>
           <Button variant="outline" size="sm" className="mt-4" onClick={() => void carregarClientes()}>
@@ -195,7 +196,7 @@ export default function Clientes() {
         </div>
       ) : clientes.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border py-20 text-center">
-          <p className="mb-2 text-3xl">👥</p>
+          <Users className="mb-2 h-8 w-8 text-muted-foreground/50" strokeWidth={1.5} />
           <p className="text-sm font-medium text-foreground">
             {semResultado ? "Nenhum cliente encontrado" : "Nenhum cliente cadastrado"}
           </p>
@@ -326,7 +327,7 @@ function DetalheCliente({
               </div>
             ) : (
               <div className="flex flex-col items-center justify-center py-10 text-center">
-                <p className="mb-2 text-2xl">📝</p>
+                <FileText className="mb-2 h-6 w-6 text-muted-foreground/50" strokeWidth={1.5} />
                 <p className="text-sm text-muted-foreground">Nenhuma observação cadastrada</p>
               </div>
             )}

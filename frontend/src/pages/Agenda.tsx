@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
+import { AlertTriangle, CalendarDays } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -151,7 +152,7 @@ function VisaoHoje({ eventos, selecionadoId, aoSelecionar, aoEditar, aoExcluir }
       <p className="mb-4 text-sm font-medium capitalize text-foreground">{rotulo}</p>
       {doDia.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border py-16 text-center">
-          <p className="mb-2 text-3xl">📅</p>
+          <CalendarDays className="mb-2 h-8 w-8 text-muted-foreground/50" strokeWidth={1.5} />
           <p className="text-sm font-medium text-foreground">Nenhum evento hoje</p>
           <p className="mt-1 text-xs text-muted-foreground">Aproveite o dia livre!</p>
         </div>
@@ -317,7 +318,7 @@ function VisaoMes({
         </p>
         {doDiaSelecionado.length === 0 ? (
           <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border py-10 text-center">
-            <p className="mb-2 text-2xl">📋</p>
+            <CalendarDays className="mb-2 h-6 w-6 text-muted-foreground/50" strokeWidth={1.5} />
             <p className="text-xs text-muted-foreground">Sem eventos neste dia</p>
           </div>
         ) : (
@@ -728,7 +729,7 @@ export default function Agenda() {
       <div className="rounded-2xl border border-border bg-card p-4 sm:p-6">
         {erro ? (
           <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-orbis-red-tint py-16 text-center">
-            <p className="mb-2 text-3xl">⚠️</p>
+            <AlertTriangle className="mb-2 h-8 w-8 text-orbis-red/70" strokeWidth={1.5} />
             <p className="text-sm font-medium text-foreground">Não foi possível carregar a agenda</p>
             <p className="mt-1 text-xs text-muted-foreground">{erro}</p>
             <Button variant="outline" size="sm" className="mt-4" onClick={() => void carregarEventos()}>

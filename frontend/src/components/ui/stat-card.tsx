@@ -1,3 +1,4 @@
+import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export type StatColor = "blue" | "green" | "amber" | "red" | "purple" | "default";
@@ -34,12 +35,12 @@ interface StatCardProps {
   value: string | number;
   sub?: string;
   color?: StatColor;
-  icon?: string;
+  icon?: LucideIcon;
   onClick?: () => void;
   className?: string;
 }
 
-export function StatCard({ label, value, sub, color = "default", icon, onClick, className }: StatCardProps) {
+export function StatCard({ label, value, sub, color = "default", icon: Icon, onClick, className }: StatCardProps) {
   const Tag = onClick ? "button" : "div";
 
   return (
@@ -52,9 +53,9 @@ export function StatCard({ label, value, sub, color = "default", icon, onClick, 
       )}
     >
       <div className="flex items-center justify-between">
-        {icon && (
-          <div className={cn("flex h-8 w-8 items-center justify-center rounded-lg text-base", ICON_BG_CLASS[color])}>
-            {icon}
+        {Icon && (
+          <div className={cn("flex h-8 w-8 items-center justify-center rounded-lg", ICON_BG_CLASS[color])}>
+            <Icon className="h-4 w-4" strokeWidth={1.75} />
           </div>
         )}
         <div className={cn("ml-auto h-1.5 w-1.5 rounded-full", DOT_CLASS[color])} />

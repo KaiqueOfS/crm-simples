@@ -1,16 +1,18 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { Calendar, LineChart, Menu, Moon, Settings, Sun, Users, Home } from "lucide-react";
 import { clearToken, SESSION_EXPIRED_EVENT } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { OrbisLogo } from "@/components/ui/orbis-logo";
 import { toast } from "sonner";
 
 /* ─── Navegação ──────────────────────────────────────────── */
 const NAV_PRINCIPAL = [
-  { para: "/hoje",      icone: "🏠", rotulo: "Hoje"       },
-  { para: "/agenda",    icone: "📅", rotulo: "Agenda"     },
-  { para: "/clientes",  icone: "👥", rotulo: "Clientes"   },
-  { para: "/dashboard", icone: "📊", rotulo: "Relatórios" },
-  { para: "/perfil",    icone: "⚙️",  rotulo: "Perfil"     },
+  { para: "/hoje",      icone: Home,      rotulo: "Meu Dia"       },
+  { para: "/clientes",  icone: Users,     rotulo: "Clientes"      },
+  { para: "/agenda",    icone: Calendar,  rotulo: "Agenda"        },
+  { para: "/dashboard", icone: LineChart, rotulo: "Financeiro"    },
+  { para: "/perfil",    icone: Settings,  rotulo: "Configurações" },
 ] as const;
 
 /* ─── Componente ─────────────────────────────────────────── */
@@ -69,33 +71,30 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       )}
     >
       {/* Logo */}
-      <div className="flex h-14 shrink-0 items-center gap-3 border-b border-sidebar-border px-4">
-        <div className="flex h-7 w-7 items-center justify-center rounded-lg border border-orbis-blue-tint bg-orbis-blue-tint">
-          <span className="text-xs font-bold text-orbis-blue">O</span>
-        </div>
-        <div>
-          <p className="text-sm font-semibold leading-none tracking-tight text-foreground">Orbis</p>
-          <p className="mt-0.5 text-[10px] uppercase tracking-widest text-muted-foreground">CRM</p>
-        </div>
+      <div className="flex h-14 shrink-0 items-center border-b border-sidebar-border px-4">
+        <OrbisLogo />
       </div>
 
       {/* Links */}
       <nav className="flex-1 space-y-0.5 overflow-y-auto px-2 py-3">
-        {NAV_PRINCIPAL.map((item) => (
-          <Link
-            key={item.para}
-            to={item.para}
-            className={cn(
-              "flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm select-none orbis-transition",
-              estaAtivo(item.para)
-                ? "bg-orbis-blue-tint font-medium text-orbis-blue"
-                : "text-muted-foreground hover:bg-accent hover:text-foreground",
-            )}
-          >
-            <span className="text-base leading-none">{item.icone}</span>
-            <span className="truncate">{item.rotulo}</span>
-          </Link>
-        ))}
+        {NAV_PRINCIPAL.map((item) => {
+          const Icone = item.icone;
+          return (
+            <Link
+              key={item.para}
+              to={item.para}
+              className={cn(
+                "flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm select-none orbis-transition",
+                estaAtivo(item.para)
+                  ? "bg-orbis-blue-tint font-medium text-orbis-blue"
+                  : "text-muted-foreground hover:bg-accent hover:text-foreground",
+              )}
+            >
+              <Icone className="h-4 w-4 shrink-0" strokeWidth={1.75} />
+              <span className="truncate">{item.rotulo}</span>
+            </Link>
+          );
+        })}
       </nav>
 
       {/* Usuário */}
@@ -112,7 +111,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             className="shrink-0 text-muted-foreground orbis-transition hover:text-foreground"
             aria-label="Alternar tema"
           >
-            <span className="text-sm">{modoEscuro ? "☀️" : "🌙"}</span>
+            {modoEscuro ? <Sun className="h-4 w-4" strokeWidth={1.75} /> : <Moon className="h-4 w-4" strokeWidth={1.75} />}
           </button>
         </div>
         <button
@@ -146,14 +145,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             className="rounded-lg p-1.5 text-muted-foreground orbis-transition hover:bg-accent hover:text-foreground"
             aria-label="Abrir menu"
           >
-            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
-            </svg>
+            <Menu className="h-5 w-5" strokeWidth={1.75} />
           </button>
-          <div className="flex h-6 w-6 items-center justify-center rounded-md border border-orbis-blue-tint bg-orbis-blue-tint">
-            <span className="text-[10px] font-bold text-orbis-blue">O</span>
-          </div>
-          <p className="text-sm font-semibold text-foreground">Orbis</p>
+          <OrbisLogo size={24} />
         </header>
 
         <main className="flex-1 overflow-y-auto">{children}</main>
