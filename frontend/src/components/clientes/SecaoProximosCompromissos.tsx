@@ -5,15 +5,16 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { CATEGORIA_CFG } from "@/components/agenda/AgendaItem";
-import { HOJE_CHAVE } from "@/lib/datas";
+import { HOJE_CHAVE, formatarDataCurta, formatarHora } from "@/lib/datas";
 import { agendamentosApi, type Agendamento } from "@/lib/api";
 import { linkWhatsapp } from "@/lib/utils/whatsapp";
 
 /**
  * Seção "Próximos compromissos" do painel de detalhes do cliente — usa o
  * vínculo real `clienteId` (Fase 7) via GET /api/agendamentos/cliente/{id}.
- * Mostra só hoje em diante; compromissos passados ficam para uma futura
- * seção de Histórico (fora do escopo desta fase).
+ * Mostra só hoje em diante e com status PENDENTE (Fase 9.2); compromissos
+ * passados ou já concluídos ficam para uma futura seção de Histórico (fora
+ * do escopo desta fase).
  *
  * `telefoneCliente` vem como prop (o painel-pai já tem o Cliente completo
  * carregado) em vez de uma busca própria — todo compromisso aqui já é,
@@ -40,7 +41,8 @@ export function SecaoProximosCompromissos({
       .listarPorCliente(clienteId)
       .then((lista) => {
         if (cancelado) return;
-        setCompromissos(lista.filter((c) => c.data >= HOJE_CHAVE));
+        // Concluídos ficam para uma futura seção de Histórico, não aqui.
+        setCompromissos(lista.filter((c) => c.data >= HOJE_CHAVE && c.status === "PENDENTE"));
       })
       .catch((err) => {
         if (cancelado) return;
@@ -80,7 +82,7 @@ export function SecaoProximosCompromissos({
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
                     <p className="text-xs text-muted-foreground">
-                      {formatarDataCurta(compromisso.data)} · {compromisso.hora}
+                      {formatarDataCurta(compromisso.data)} · {formatarHora(compromisso.hora)}
                     </p>
                     <p className="truncate text-sm font-medium text-foreground">{compromisso.titulo}</p>
                   </div>
@@ -104,8 +106,4 @@ export function SecaoProximosCompromissos({
       )}
     </div>
   );
-}
-
-function formatarDataCurta(data: string): string {
-  return new Date(`${data}T12:00:00`).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" });
 }

@@ -3,6 +3,7 @@ package com.kaique.crm_simples.repository;
 import com.kaique.crm_simples.model.Agendamento;
 import com.kaique.crm_simples.model.Cliente;
 import com.kaique.crm_simples.model.Usuario;
+import com.kaique.crm_simples.model.enums.StatusAgendamento;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.time.LocalDate;
@@ -27,4 +28,9 @@ public interface AgendamentoRepository extends JpaRepository<Agendamento, Long> 
     // Busca agendamentos de um usuário vinculados a um cliente específico —
     // base para futuras seções do painel do cliente (próxima ação, histórico).
     List<Agendamento> findByUsuarioAndClienteOrderByDataAscHoraAsc(Usuario usuario, Cliente cliente);
+
+    // Busca agendamentos de um usuário, de um cliente e status específicos,
+    // do mais recente para o mais antigo — base da seção "Histórico" (Fase 10).
+    List<Agendamento> findByUsuarioAndClienteAndStatusOrderByDataDescHoraDesc(
+            Usuario usuario, Cliente cliente, StatusAgendamento status);
 }

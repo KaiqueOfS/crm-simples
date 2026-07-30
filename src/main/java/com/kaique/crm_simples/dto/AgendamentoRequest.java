@@ -1,5 +1,6 @@
 package com.kaique.crm_simples.dto;
 
+import com.kaique.crm_simples.model.enums.StatusAgendamento;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
@@ -35,6 +36,10 @@ public class AgendamentoRequest {
     private String categoria = "atendimento";
     private Integer lembrete = 0;
 
+    // Opcional: ausente na criação, o service usa PENDENTE. Na atualização,
+    // ausente mantém o status atual do agendamento (não reseta para PENDENTE).
+    private StatusAgendamento status;
+
     public String getTitulo() { return titulo; }
     public void setTitulo(String titulo) { this.titulo = titulo; }
 
@@ -55,4 +60,7 @@ public class AgendamentoRequest {
 
     public Integer getLembrete() { return lembrete; }
     public void setLembrete(Integer lembrete) { this.lembrete = lembrete; }
+
+    public StatusAgendamento getStatus() { return status; }
+    public void setStatus(StatusAgendamento status) { this.status = status; }
 }

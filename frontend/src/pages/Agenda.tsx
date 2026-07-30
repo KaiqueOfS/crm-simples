@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { AgendaHeader, type Visualizacao } from "@/components/agenda/AgendaHeader";
 import { AgendaItem, CATEGORIA_CFG } from "@/components/agenda/AgendaItem";
 import { CompromissoDialog } from "@/components/agenda/CompromissoDialog";
-import { HOJE, HOJE_CHAVE, datasDaSemana, doisDigitos, paraChave } from "@/lib/datas";
+import { HOJE, HOJE_CHAVE, datasDaSemana, dataPorExtenso, doisDigitos, paraChave, paraDataLocal } from "@/lib/datas";
 import { agendamentosApi, type Agendamento, type AgendamentoInput } from "@/lib/api";
 
 /**
@@ -36,16 +36,17 @@ type AcoesCompromisso = {
   aoSelecionar: (id: number) => void;
   aoEditar: (compromisso: Agendamento) => void;
   aoExcluir: (compromisso: Agendamento) => void;
+  aoConcluir: (compromisso: Agendamento) => void;
 };
 
 /* ─── Visão: Hoje ────────────────────────────────────────── */
-function VisaoHoje({ compromissos, selecionadoId, aoSelecionar, aoEditar, aoExcluir }: AcoesCompromisso & { compromissos: Agendamento[] }) {
+function VisaoHoje({ compromissos, selecionadoId, aoSelecionar, aoEditar, aoExcluir, aoConcluir }: AcoesCompromisso & { compromissos: Agendamento[] }) {
   const doDia = compromissosDoDia(compromissos, HOJE_CHAVE);
-  const rotulo = HOJE.toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long" });
+  const rotulo = dataPorExtenso(HOJE);
 
   return (
     <div>
-      <p className="mb-4 text-sm font-medium capitalize text-foreground">{rotulo}</p>
+      <p className="mb-4 text-sm font-medium text-foreground">{rotulo}</p>
       {doDia.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border py-16 text-center">
           <CalendarDays className="mb-2 h-8 w-8 text-muted-foreground/50" strokeWidth={1.5} />
@@ -62,6 +63,7 @@ function VisaoHoje({ compromissos, selecionadoId, aoSelecionar, aoEditar, aoExcl
               aoClicar={() => aoSelecionar(compromisso.id)}
               aoEditar={() => aoEditar(compromisso)}
               aoExcluir={() => aoExcluir(compromisso)}
+              aoConcluir={() => aoConcluir(compromisso)}
             />
           ))}
         </div>
@@ -72,7 +74,7 @@ function VisaoHoje({ compromissos, selecionadoId, aoSelecionar, aoEditar, aoExcl
 
 /* ─── Visão: Semana ──────────────────────────────────────── */
 function VisaoSemana({
-  compromissos, dataBase, selecionadoId, aoSelecionar, aoEditar, aoExcluir,
+  compromissos, dataBase, selecionadoId, aoSelecionar, aoEditar, aoExcluir, aoConcluir,
 }: AcoesCompromisso & { compromissos: Agendamento[]; dataBase: Date }) {
   const semana = datasDaSemana(dataBase);
 
@@ -130,6 +132,7 @@ function VisaoSemana({
                     aoClicar={() => aoSelecionar(compromisso.id)}
                     aoEditar={() => aoEditar(compromisso)}
                     aoExcluir={() => aoExcluir(compromisso)}
+                    aoConcluir={() => aoConcluir(compromisso)}
                   />
                 ))}
               </div>
@@ -143,7 +146,7 @@ function VisaoSemana({
 
 /* ─── Visão: Mês ─────────────────────────────────────────── */
 function VisaoMes({
-  compromissos, ano, mes, dataSelecionada, aoSelecionarData, selecionadoId, aoSelecionar, aoEditar, aoExcluir,
+  compromissos, ano, mes, dataSelecionada, aoSelecionarData, selecionadoId, aoSelecionar, aoEditar, aoExcluir, aoConcluir,
 }: AcoesCompromisso & {
   compromissos: Agendamento[];
   ano: number; mes: number;
@@ -210,7 +213,7 @@ function VisaoMes({
       {/* Detalhe do dia selecionado */}
       <div>
         <p className="mb-3 text-sm font-semibold text-foreground">
-          {new Date(`${dataSelecionada}T12:00:00`).toLocaleDateString("pt-BR", { day: "numeric", month: "long" })}
+          {paraDataLocal(dataSelecionada).toLocaleDateString("pt-BR", { day: "numeric", month: "long" })}
         </p>
         {doDiaSelecionado.length === 0 ? (
           <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border py-10 text-center">
@@ -227,6 +230,7 @@ function VisaoMes({
                 aoClicar={() => aoSelecionar(compromisso.id)}
                 aoEditar={() => aoEditar(compromisso)}
                 aoExcluir={() => aoExcluir(compromisso)}
+                aoConcluir={() => aoConcluir(compromisso)}
               />
             ))}
           </div>
@@ -418,6 +422,16 @@ export default function Agenda() {
     }
   }
 
+  async function concluirCompromisso(compromisso: Agendamento) {
+    try {
+      const atualizado = await agendamentosApi.concluir(compromisso.id);
+      setCompromissos((atual) => atual.map((c) => (c.id === atualizado.id ? atualizado : c)));
+      toast.success("Compromisso concluído");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Não foi possível concluir o compromisso.");
+    }
+  }
+
   async function confirmarExclusao() {
     if (!compromissoParaExcluir) return;
     try {
@@ -468,6 +482,7 @@ export default function Agenda() {
                 aoSelecionar={alternarSelecao}
                 aoEditar={abrirEdicao}
                 aoExcluir={setCompromissoParaExcluir}
+                aoConcluir={concluirCompromisso}
               />
             )}
             {visao === "semana" && (
@@ -478,6 +493,7 @@ export default function Agenda() {
                 aoSelecionar={alternarSelecao}
                 aoEditar={abrirEdicao}
                 aoExcluir={setCompromissoParaExcluir}
+                aoConcluir={concluirCompromisso}
               />
             )}
             {visao === "mes" && (
@@ -491,6 +507,7 @@ export default function Agenda() {
                 aoSelecionar={alternarSelecao}
                 aoEditar={abrirEdicao}
                 aoExcluir={setCompromissoParaExcluir}
+                aoConcluir={concluirCompromisso}
               />
             )}
           </>

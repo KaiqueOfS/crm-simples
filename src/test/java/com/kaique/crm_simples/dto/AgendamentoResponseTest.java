@@ -2,6 +2,7 @@ package com.kaique.crm_simples.dto;
 
 import com.kaique.crm_simples.model.Agendamento;
 import com.kaique.crm_simples.model.Cliente;
+import com.kaique.crm_simples.model.enums.StatusAgendamento;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -35,6 +36,7 @@ class AgendamentoResponseTest {
         assertEquals(criadoEm, resposta.createdAt());
         assertEquals(atualizadoEm, resposta.updatedAt());
         assertNull(resposta.clienteId());
+        assertEquals(StatusAgendamento.PENDENTE, resposta.status());
     }
 
     @Test

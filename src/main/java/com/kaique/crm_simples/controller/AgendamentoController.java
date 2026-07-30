@@ -64,6 +64,15 @@ public class AgendamentoController {
     }
 
     /**
+     * Lista o histórico de agendamentos concluídos de um cliente específico.
+     * Usado pela seção "Histórico" no painel de detalhes do cliente.
+     */
+    @GetMapping("/cliente/{clienteId}/historico")
+    public List<AgendamentoResponse> listarHistorico(@PathVariable Long clienteId) {
+        return service.listarHistorico(clienteId);
+    }
+
+    /**
      * Cria um novo agendamento para o usuário autenticado.
      *
      * @param request dados do agendamento.
@@ -96,5 +105,17 @@ public class AgendamentoController {
     @DeleteMapping("/{id}")
     public void deletar(@PathVariable Long id) {
         service.deletar(id);
+    }
+
+    /**
+     * Marca um agendamento como concluído.
+     * Não existe endpoint de cancelamento ainda (fora do escopo desta fase).
+     *
+     * @param id identificador do agendamento.
+     * @return agendamento atualizado.
+     */
+    @PatchMapping("/{id}/concluir")
+    public AgendamentoResponse concluir(@PathVariable Long id) {
+        return service.concluir(id);
     }
 }

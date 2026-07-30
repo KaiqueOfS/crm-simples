@@ -4,6 +4,7 @@ import { Dialog, DialogBody, DialogContent, DialogFooter, DialogHeader, DialogTi
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { clientesApi, type Agendamento, type AgendamentoInput, type CategoriaAgendamento, type Cliente } from "@/lib/api";
+import { formatarHora } from "@/lib/datas";
 import { ClienteCombobox } from "./ClienteCombobox";
 import { SeletorCategoria } from "./SeletorCategoria";
 
@@ -37,7 +38,7 @@ function valoresIniciais(compromisso: Agendamento | null, dataPadrao: string): C
       titulo: compromisso.titulo,
       clienteId: compromisso.clienteId ?? "",
       data: compromisso.data,
-      hora: compromisso.hora,
+      hora: formatarHora(compromisso.hora),
       categoria: compromisso.categoria,
     };
   }

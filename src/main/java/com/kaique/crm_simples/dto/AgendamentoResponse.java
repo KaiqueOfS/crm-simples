@@ -1,6 +1,7 @@
 package com.kaique.crm_simples.dto;
 
 import com.kaique.crm_simples.model.Agendamento;
+import com.kaique.crm_simples.model.enums.StatusAgendamento;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -17,6 +18,9 @@ import java.time.LocalTime;
  * (ver V3__add_cliente_id_agendamentos.sql). "pessoa" continua presente e
  * sincronizado com o nome do cliente pelo AgendamentoService, para telas
  * que só precisam exibir o nome sem buscar a lista de clientes de novo.
+ *
+ * "status" (PENDENTE/CONCLUIDO/CANCELADO) — ver StatusAgendamento e
+ * V4__add_status_agendamento.sql.
  */
 public record AgendamentoResponse(
         Long id,
@@ -27,6 +31,7 @@ public record AgendamentoResponse(
         LocalTime hora,
         String categoria,
         Integer lembrete,
+        StatusAgendamento status,
         LocalDateTime createdAt,
         LocalDateTime updatedAt) {
 
@@ -40,6 +45,7 @@ public record AgendamentoResponse(
                 agendamento.getHora(),
                 agendamento.getCategoria(),
                 agendamento.getLembrete(),
+                agendamento.getStatus(),
                 agendamento.getCreatedAt(),
                 agendamento.getUpdatedAt());
     }

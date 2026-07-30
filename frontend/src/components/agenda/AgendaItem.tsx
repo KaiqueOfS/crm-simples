@@ -2,8 +2,10 @@ import { useState, type MouseEvent } from "react";
 import { MessageCircle } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { clientesApi, type Agendamento, type CategoriaAgendamento } from "@/lib/api";
+import { Button } from "@/components/ui/button";
+import { clientesApi, type Agendamento, type CategoriaAgendamento, type StatusAgendamento } from "@/lib/api";
 import { linkWhatsapp } from "@/lib/utils/whatsapp";
+import { formatarHora } from "@/lib/datas";
 
 /**
  * Configuração visual por categoria — cor do indicador, do selo de tipo e
@@ -19,21 +21,31 @@ export const CATEGORIA_CFG: Record<CategoriaAgendamento, { rotulo: string; ponto
   outro:       { rotulo: "Outro",       ponto: "bg-surface-2",    selo: "bg-surface-2 text-muted-foreground"     },
 };
 
-/** Cartão de um compromisso na agenda: horário, título, cliente, tipo e status visual. */
+/** Configuração visual por status do compromisso (Fase 9.1/9.2). */
+export const STATUS_AGENDAMENTO_CFG: Record<StatusAgendamento, { rotulo: string; selo: string }> = {
+  PENDENTE:  { rotulo: "Pendente",   selo: "bg-orbis-amber-tint text-orbis-amber" },
+  CONCLUIDO: { rotulo: "Concluído",  selo: "bg-orbis-green-tint text-orbis-green" },
+  CANCELADO: { rotulo: "Cancelado", selo: "bg-orbis-red-tint text-orbis-red"     },
+};
+
+/** Cartão de um compromisso na agenda: horário, título, cliente, tipo e status. */
 export function AgendaItem({
   compromisso,
   selecionado,
   aoClicar,
   aoEditar,
   aoExcluir,
+  aoConcluir,
 }: {
   compromisso: Agendamento;
   selecionado: boolean;
   aoClicar: () => void;
   aoEditar: () => void;
   aoExcluir: () => void;
+  aoConcluir: () => void;
 }) {
   const cfg = CATEGORIA_CFG[compromisso.categoria];
+  const statusCfg = STATUS_AGENDAMENTO_CFG[compromisso.status];
   const [abrindoWhatsapp, setAbrindoWhatsapp] = useState(false);
 
   // O compromisso só guarda o clienteId — o telefone vive no Cliente, então
@@ -67,13 +79,18 @@ export function AgendaItem({
       <div className="min-w-0 flex-1">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
-            <p className="mb-0.5 text-[11px] font-medium tabular-nums text-muted-foreground">{compromisso.hora}</p>
+            <p className="mb-0.5 text-[11px] font-medium tabular-nums text-muted-foreground">{formatarHora(compromisso.hora)}</p>
             <p className="truncate text-sm font-medium text-foreground">{compromisso.titulo}</p>
             {compromisso.pessoa && <p className="truncate text-xs text-muted-foreground">{compromisso.pessoa}</p>}
           </div>
-          <span className={cn("shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium", cfg.selo)}>
-            {cfg.rotulo}
-          </span>
+          <div className="flex shrink-0 items-center gap-1">
+            <span className={cn("rounded-full px-2 py-0.5 text-[10px] font-medium", cfg.selo)}>
+              {cfg.rotulo}
+            </span>
+            <span className={cn("rounded-full px-2 py-0.5 text-[10px] font-medium", statusCfg.selo)}>
+              {statusCfg.rotulo}
+            </span>
+          </div>
         </div>
 
         {selecionado && (
@@ -85,7 +102,7 @@ export function AgendaItem({
               </div>
               <div>
                 <p className="text-muted-foreground">Horário</p>
-                <p className="font-medium text-foreground">{compromisso.hora}</p>
+                <p className="font-medium text-foreground">{formatarHora(compromisso.hora)}</p>
               </div>
               {compromisso.pessoa && (
                 <div>
@@ -93,8 +110,22 @@ export function AgendaItem({
                   <p className="font-medium text-foreground">{compromisso.pessoa}</p>
                 </div>
               )}
+              <div>
+                <p className="text-muted-foreground">Status</p>
+                <p className="font-medium text-foreground">{statusCfg.rotulo}</p>
+              </div>
             </div>
-            <div className="flex gap-2 pt-1">
+            <div className="flex flex-wrap gap-2 pt-1">
+              {compromisso.status === "PENDENTE" && (
+                <Button
+                  variant="success"
+                  size="sm"
+                  className="flex-1"
+                  onClick={(e) => { e.stopPropagation(); aoConcluir(); }}
+                >
+                  Concluir
+                </Button>
+              )}
               <button
                 onClick={(e) => { e.stopPropagation(); aoEditar(); }}
                 className="flex-1 rounded-lg bg-primary py-2 text-xs font-medium text-primary-foreground orbis-transition hover:opacity-90"

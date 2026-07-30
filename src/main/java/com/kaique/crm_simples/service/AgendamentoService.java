@@ -8,6 +8,7 @@ import com.kaique.crm_simples.exception.ClienteNaoEncontradoException;
 import com.kaique.crm_simples.model.Agendamento;
 import com.kaique.crm_simples.model.Cliente;
 import com.kaique.crm_simples.model.Usuario;
+import com.kaique.crm_simples.model.enums.StatusAgendamento;
 import com.kaique.crm_simples.repository.AgendamentoRepository;
 import com.kaique.crm_simples.repository.ClienteRepository;
 import org.slf4j.Logger;
@@ -92,6 +93,23 @@ public class AgendamentoService {
     }
 
     /**
+     * Lista o histórico de agendamentos CONCLUIDOS de um cliente específico
+     * do usuário autenticado, do mais recente para o mais antigo. Base da
+     * seção "Histórico" no painel de detalhes do cliente (Fase 10) — não
+     * existe entidade/tabela de histórico própria, é sempre uma consulta
+     * sobre os próprios agendamentos já concluídos.
+     */
+    public List<AgendamentoResponse> listarHistorico(Long clienteId) {
+        Usuario usuario = usuarioAutenticadoService.obterUsuarioLogado();
+        Cliente cliente = buscarClienteDoUsuario(clienteId, usuario);
+        return repository
+                .findByUsuarioAndClienteAndStatusOrderByDataDescHoraDesc(usuario, cliente, StatusAgendamento.CONCLUIDO)
+                .stream()
+                .map(AgendamentoResponse::de)
+                .toList();
+    }
+
+    /**
      * Cria um novo agendamento para o usuário autenticado.
      *
      * O request não tem campo "usuario" — o dono é sempre o usuário
@@ -106,6 +124,7 @@ public class AgendamentoService {
         agendamento.setHora(request.getHora());
         agendamento.setCategoria(request.getCategoria());
         agendamento.setLembrete(request.getLembrete());
+        agendamento.setStatus(request.getStatus() != null ? request.getStatus() : StatusAgendamento.PENDENTE);
         agendamento.setUsuario(usuario);
         aplicarCliente(agendamento, request, usuario);
 
@@ -125,7 +144,22 @@ public class AgendamentoService {
         agendamento.setHora(request.getHora());
         agendamento.setCategoria(request.getCategoria());
         agendamento.setLembrete(request.getLembrete());
+        // Ausente, mantém o status atual — atualizar outros campos não deve
+        // resetar um agendamento já concluído/cancelado de volta a PENDENTE.
+        if (request.getStatus() != null) {
+            agendamento.setStatus(request.getStatus());
+        }
         aplicarCliente(agendamento, request, agendamento.getUsuario());
+        return AgendamentoResponse.de(repository.save(agendamento));
+    }
+
+    /**
+     * Marca um agendamento como concluído.
+     * Garante que o agendamento pertence ao usuário autenticado.
+     */
+    public AgendamentoResponse concluir(Long id) {
+        Agendamento agendamento = buscarDoUsuario(id);
+        agendamento.setStatus(StatusAgendamento.CONCLUIDO);
         return AgendamentoResponse.de(repository.save(agendamento));
     }
 

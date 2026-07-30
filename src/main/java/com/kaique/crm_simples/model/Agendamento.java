@@ -1,6 +1,7 @@
 package com.kaique.crm_simples.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.kaique.crm_simples.model.enums.StatusAgendamento;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -57,6 +58,14 @@ public class Agendamento {
     // Minutos antes para disparar o lembrete (0 = sem lembrete)
     private Integer lembrete = 0;
 
+    // Situação do agendamento. Default PENDENTE para novos registros feitos
+    // pela aplicação; agendamentos antigos recebem PENDENTE diretamente pelo
+    // DEFAULT da coluna no banco (ver V4__add_status_agendamento.sql), não
+    // por este valor em memória. Sem nullable=false de propósito — mesmo
+    // padrão do restante da entidade (obrigatoriedade real fica na API).
+    @Enumerated(EnumType.STRING)
+    private StatusAgendamento status = StatusAgendamento.PENDENTE;
+
     // Usuário dono do agendamento
     @ManyToOne
     @JoinColumn(name = "usuario_id")
@@ -97,6 +106,9 @@ public class Agendamento {
 
     public Integer getLembrete() { return lembrete; }
     public void setLembrete(Integer lembrete) { this.lembrete = lembrete; }
+
+    public StatusAgendamento getStatus() { return status; }
+    public void setStatus(StatusAgendamento status) { this.status = status; }
 
     public Usuario getUsuario() { return usuario; }
     public void setUsuario(Usuario usuario) { this.usuario = usuario; }

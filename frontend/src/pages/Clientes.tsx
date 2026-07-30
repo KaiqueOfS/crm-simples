@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { AlertTriangle, ChevronDown, FileText, MessageCircle, Plus, Search, Users, X } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -7,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ClienteFormDialog, type ClienteFormValues } from "@/components/clientes/ClienteFormDialog";
 import { SecaoProximosCompromissos } from "@/components/clientes/SecaoProximosCompromissos";
+import { SecaoHistorico } from "@/components/clientes/SecaoHistorico";
 import { clientesApi, STATUS_LIST, type Cliente, type Status } from "@/lib/api";
 import { linkWhatsapp } from "@/lib/utils/whatsapp";
 
@@ -38,6 +40,8 @@ function clienteDesde(createdAt: string): string {
 }
 
 export default function Clientes() {
+  const [searchParams, setSearchParams] = useSearchParams();
+
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [totalClientes, setTotalClientes] = useState(0);
   const [carregando, setCarregando] = useState(true);
@@ -62,6 +66,30 @@ export default function Clientes() {
   useEffect(() => {
     void carregarClientes();
   }, [buscaEfetiva, filtroStatus]);
+
+  // Deep-link vindo do Meu Dia (?clienteId=X): busca o cliente direto pela
+  // API (funciona independente de busca/filtro/paginação da lista atual),
+  // abre o painel e limpa o parâmetro da URL depois de carregar — sem hack,
+  // usando o próprio setSearchParams do React Router.
+  useEffect(() => {
+    const idParam = searchParams.get("clienteId");
+    if (!idParam) return;
+
+    clientesApi
+      .get(Number(idParam))
+      .then((cliente) => setClienteSelecionado(cliente))
+      .catch((err) => toast.error(err instanceof Error ? err.message : "Não foi possível abrir este cliente."))
+      .finally(() => {
+        setSearchParams(
+          (atual) => {
+            const proximo = new URLSearchParams(atual);
+            proximo.delete("clienteId");
+            return proximo;
+          },
+          { replace: true },
+        );
+      });
+  }, [searchParams, setSearchParams]);
 
   async function carregarClientes() {
     setCarregando(true);
@@ -94,12 +122,12 @@ export default function Clientes() {
   async function salvarCliente(valores: ClienteFormValues) {
     try {
       if (clienteEmEdicao) {
-        const atualizado = await clientesApi.update(clienteEmEdicao.id, { ...valores, status: clienteEmEdicao.status });
+        const atualizado = await clientesApi.update(clienteEmEdicao.id, { ...valores, statusLead: clienteEmEdicao.statusLead });
         setClientes((atual) => atual.map((c) => (c.id === atualizado.id ? atualizado : c)));
         setClienteSelecionado((atual) => (atual && atual.id === atualizado.id ? atualizado : atual));
         toast.success("Cliente atualizado");
       } else {
-        const criado = await clientesApi.create({ ...valores, status: "NOVO" });
+        const criado = await clientesApi.create({ ...valores, statusLead: "NOVO" });
         setClientes((atual) => [criado, ...atual]);
         setTotalClientes((t) => t + 1);
         toast.success("Cliente cadastrado");
@@ -299,7 +327,7 @@ function CardCliente({ cliente, selecionado, aoClicar }: { cliente: Cliente; sel
             <p className="truncate text-sm font-medium text-foreground">{cliente.nome}</p>
             <p className="text-xs text-muted-foreground">{cliente.telefone}</p>
           </div>
-          <SeloStatus status={cliente.status} />
+          <SeloStatus status={cliente.statusLead} />
         </div>
       </div>
     </div>
@@ -328,7 +356,7 @@ function DetalheConteudo({
         <Avatar nome={cliente.nome} tamanho="lg" />
         <div className="min-w-0 flex-1">
           <p className="text-base font-semibold text-foreground">{cliente.nome}</p>
-          <div className="mt-1"><SeloStatusEditavel status={cliente.status} aoMudar={aoMudarStatus} /></div>
+          <div className="mt-1"><SeloStatusEditavel status={cliente.statusLead} aoMudar={aoMudarStatus} /></div>
           <p className="mt-1.5 text-sm text-muted-foreground">{cliente.telefone}</p>
           <p className="mt-0.5 text-[11px] text-muted-foreground/60">Cliente desde {clienteDesde(cliente.createdAt)}</p>
         </div>
@@ -347,11 +375,12 @@ function DetalheConteudo({
         )}
         <SecaoObservacoes cliente={cliente} />
         <SecaoProximosCompromissos clienteId={cliente.id} telefoneCliente={cliente.telefone} />
+        <SecaoHistorico clienteId={cliente.id} />
         {/*
-          Próximas seções (histórico, arquivos e integração com Financeiro)
-          entram aqui como novos blocos, seguindo o mesmo padrão de
-          SecaoObservacoes/SecaoProximosCompromissos, assim que o backend
-          passar a suportar esses dados.
+          Próximas seções (arquivos e integração com Financeiro) entram aqui
+          como novos blocos, seguindo o mesmo padrão de
+          SecaoObservacoes/SecaoProximosCompromissos/SecaoHistorico, assim que
+          o backend passar a suportar esses dados.
         */}
       </div>
 

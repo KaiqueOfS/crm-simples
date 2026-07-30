@@ -8,6 +8,7 @@ import com.kaique.crm_simples.exception.ClienteNaoEncontradoException;
 import com.kaique.crm_simples.model.Agendamento;
 import com.kaique.crm_simples.model.Cliente;
 import com.kaique.crm_simples.model.Usuario;
+import com.kaique.crm_simples.model.enums.StatusAgendamento;
 import com.kaique.crm_simples.repository.AgendamentoRepository;
 import com.kaique.crm_simples.repository.ClienteRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -213,6 +214,94 @@ class AgendamentoServiceTest {
         when(clienteRepository.findById(5L)).thenReturn(Optional.of(clienteDeOutroUsuario));
 
         assertThrows(AcessoNegadoException.class, () -> service.listarPorCliente(5L));
+    }
+
+    @Test
+    void listaHistoricoApenasComAgendamentosConcluidos() {
+        Cliente cliente = clienteComId(5L, usuarioLogado);
+        when(clienteRepository.findById(5L)).thenReturn(Optional.of(cliente));
+
+        Agendamento concluido = new Agendamento();
+        concluido.setTitulo("Instalação elétrica");
+        concluido.setCliente(cliente);
+        concluido.setUsuario(usuarioLogado);
+        concluido.setStatus(StatusAgendamento.CONCLUIDO);
+        when(repository.findByUsuarioAndClienteAndStatusOrderByDataDescHoraDesc(usuarioLogado, cliente, StatusAgendamento.CONCLUIDO))
+                .thenReturn(java.util.List.of(concluido));
+
+        java.util.List<AgendamentoResponse> resposta = service.listarHistorico(5L);
+
+        assertEquals(1, resposta.size());
+        assertEquals("Instalação elétrica", resposta.get(0).titulo());
+        assertEquals(StatusAgendamento.CONCLUIDO, resposta.get(0).status());
+    }
+
+    @Test
+    void lancaExcecaoAoListarHistoricoDeClienteInexistente() {
+        when(clienteRepository.findById(999L)).thenReturn(Optional.empty());
+
+        assertThrows(ClienteNaoEncontradoException.class, () -> service.listarHistorico(999L));
+    }
+
+    @Test
+    void lancaExcecaoAoListarHistoricoDeClienteDeOutroUsuario() {
+        Cliente clienteDeOutroUsuario = clienteComId(5L, usuarioComId(2L));
+        when(clienteRepository.findById(5L)).thenReturn(Optional.of(clienteDeOutroUsuario));
+
+        assertThrows(AcessoNegadoException.class, () -> service.listarHistorico(5L));
+    }
+
+    @Test
+    void usaPendenteComoStatusPadraoQuandoNaoInformado() {
+        AgendamentoRequest request = new AgendamentoRequest();
+        request.setTitulo("Visita técnica");
+        request.setData(LocalDate.now());
+        request.setHora(LocalTime.of(9, 0));
+
+        when(repository.save(any(Agendamento.class))).thenAnswer(invocacao -> invocacao.getArgument(0));
+
+        AgendamentoResponse resposta = service.salvar(request);
+
+        assertEquals(StatusAgendamento.PENDENTE, resposta.status());
+    }
+
+    @Test
+    void mantemStatusInformadoNaCriacao() {
+        AgendamentoRequest request = new AgendamentoRequest();
+        request.setTitulo("Visita técnica");
+        request.setStatus(StatusAgendamento.CONCLUIDO);
+        request.setData(LocalDate.now());
+        request.setHora(LocalTime.of(9, 0));
+
+        when(repository.save(any(Agendamento.class))).thenAnswer(invocacao -> invocacao.getArgument(0));
+
+        AgendamentoResponse resposta = service.salvar(request);
+
+        assertEquals(StatusAgendamento.CONCLUIDO, resposta.status());
+    }
+
+    @Test
+    void concluirAlteraStatusParaConcluido() {
+        Agendamento agendamento = new Agendamento();
+        agendamento.setUsuario(usuarioLogado);
+        when(repository.findById(10L)).thenReturn(Optional.of(agendamento));
+        when(repository.save(any(Agendamento.class))).thenAnswer(invocacao -> invocacao.getArgument(0));
+
+        AgendamentoResponse resposta = service.concluir(10L);
+
+        assertEquals(StatusAgendamento.CONCLUIDO, resposta.status());
+        assertEquals(StatusAgendamento.CONCLUIDO, agendamento.getStatus());
+    }
+
+    @Test
+    void naoPermiteConcluirAgendamentoDeOutroUsuario() {
+        Agendamento agendamentoDeOutroUsuario = new Agendamento();
+        agendamentoDeOutroUsuario.setUsuario(usuarioComId(2L));
+        when(repository.findById(10L)).thenReturn(Optional.of(agendamentoDeOutroUsuario));
+
+        assertThrows(AcessoNegadoException.class, () -> service.concluir(10L));
+
+        verify(repository, never()).save(any(Agendamento.class));
     }
 
     private Usuario usuarioComId(Long id) {

@@ -1,4 +1,5 @@
 import React from "react";
+import { Slot } from "@radix-ui/react-slot";
 import { cn } from "@/lib/utils";
 
 interface ButtonProps
@@ -8,7 +9,8 @@ interface ButtonProps
     | "secondary"
     | "outline"
     | "ghost"
-    | "danger";
+    | "danger"
+    | "success";
 
   size?:
     | "sm"
@@ -16,6 +18,8 @@ interface ButtonProps
     | "lg";
 
   loading?: boolean;
+
+  asChild?: boolean;
 
   children: React.ReactNode;
 }
@@ -25,11 +29,13 @@ export function Button({
   variant = "primary",
   size = "md",
   loading = false,
+  asChild = false,
   children,
   disabled,
   className,
   ...props
 }: ButtonProps) {
+  const Comp = asChild ? Slot : "button";
 
 
   const variants = {
@@ -47,7 +53,10 @@ export function Button({
       "text-foreground hover:bg-accent",
 
     danger:
-      "bg-orbis-red text-white shadow-sm hover:opacity-90 active:opacity-95"
+      "bg-orbis-red text-white shadow-sm hover:opacity-90 active:opacity-95",
+
+    success:
+      "bg-orbis-green text-white shadow-sm hover:opacity-90 active:opacity-95"
 
   };
 
@@ -66,35 +75,33 @@ export function Button({
   };
 
 
+  const classes = cn(
+    "inline-flex items-center justify-center",
+    "rounded-xl",
+    "font-medium",
+    "orbis-transition",
+    "duration-200",
+    "focus:outline-none",
+    "focus:ring-4",
+    "focus:ring-ring/20",
+    "disabled:cursor-not-allowed",
+    "disabled:opacity-50",
+    variants[variant],
+    sizes[size],
+    className
+  );
+
+  if (asChild) {
+    return (
+      <Slot {...props} className={classes}>
+        {children}
+      </Slot>
+    );
+  }
+
   return (
-    <button
-      {...props}
-      disabled={disabled || loading}
-      className={cn(
-        "inline-flex items-center justify-center",
-        "rounded-xl",
-        "font-medium",
-        "orbis-transition",
-        "duration-200",
-        "focus:outline-none",
-        "focus:ring-4",
-        "focus:ring-ring/20",
-        "disabled:cursor-not-allowed",
-        "disabled:opacity-50",
-        variants[variant],
-        sizes[size],
-        className
-      )}
-    >
-
-      {loading ? (
-        <span>
-          Carregando...
-        </span>
-      ) : (
-        children
-      )}
-
+    <button {...props} disabled={disabled || loading} className={classes}>
+      {loading ? <span>Carregando...</span> : children}
     </button>
   );
 }

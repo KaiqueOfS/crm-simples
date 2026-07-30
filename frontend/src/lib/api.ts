@@ -118,16 +118,24 @@ export const STATUS_LIST: Status[] = [
   "PERDIDO",
 ];
 
+// "statusLead" (não "status") — o backend expõe esse campo com esse nome
+// (ClienteResponse.statusLead / ClienteRequest.statusLead); o único endpoint
+// que usa a chave "status" é o dedicado PUT /api/clientes/{id}/status
+// (StatusLeadRequest), tratado à parte por `clientesApi.updateStatus`.
 export type Cliente = {
   id: number;
   nome: string;
   telefone: string;
   email: string;
   observacoes: string;
-  status: Status;
+  statusLead: Status;
   createdAt: string;
   updatedAt: string;
 };
+
+// "createdAt"/"updatedAt" são só leitura (vêm do backend) — nunca fazem
+// parte do que a tela de clientes envia ao criar/atualizar.
+export type ClienteInput = Omit<Cliente, "id" | "createdAt" | "updatedAt">;
 
 export type Pagina<T> = {
   conteudo: T[];
@@ -155,6 +163,8 @@ export type CategoriaAgendamento =
   | "urgente"
   | "outro";
 
+export type StatusAgendamento = "PENDENTE" | "CONCLUIDO" | "CANCELADO";
+
 export type Agendamento = {
   id: number;
   titulo: string;
@@ -164,9 +174,32 @@ export type Agendamento = {
   hora: string;
   categoria: CategoriaAgendamento;
   lembrete: number;
+  status: StatusAgendamento;
 };
 
-export type AgendamentoInput = Omit<Agendamento, "id">;
+// "status" é opcional aqui: ausente na criação o backend usa PENDENTE, ausente
+// na atualização ele mantém o status atual (ver AgendamentoService.java) — só
+// o endpoint /concluir muda status de propósito.
+export type AgendamentoInput = Omit<Agendamento, "id" | "status"> & { status?: StatusAgendamento };
+
+// "disponivel" sempre false por enquanto — Financeiro e Orçamentos ainda não
+// existem como módulos; o backend já responde nesse formato para o dia em
+// que existirem, sem o frontend precisar mudar o contrato.
+export type ModuloStatus = {
+  disponivel: boolean;
+};
+
+// Painel agregado de GET /api/meu-dia (ver MeuDiaResponse no backend) — toda
+// a lógica de próximo/pendentes/concluídos/atrasados é calculada lá, não aqui.
+export type MeuDia = {
+  proximoCompromisso: Agendamento | null;
+  compromissosHoje: Agendamento[];
+  totalPendentes: number;
+  totalConcluidos: number;
+  totalAtrasados: number;
+  financeiro: ModuloStatus;
+  orcamentos: ModuloStatus;
+};
 
 export type Usuario = {
   id: number;
@@ -208,13 +241,13 @@ export const clientesApi = {
 
   get: (id: number) => api<Cliente>(`/api/clientes/${id}`),
 
-  create: (c: Omit<Cliente, "id">) =>
+  create: (c: ClienteInput) =>
     api<Cliente>("/api/clientes", {
       method: "POST",
       body: JSON.stringify(c),
     }),
 
-  update: (id: number, c: Omit<Cliente, "id">) =>
+  update: (id: number, c: ClienteInput) =>
     api<Cliente>(`/api/clientes/${id}`, {
       method: "PUT",
       body: JSON.stringify(c),
@@ -237,12 +270,19 @@ export const dashboardApi = {
   get: () => api<Dashboard>("/api/dashboard"),
 };
 
+export const meuDiaApi = {
+  get: () => api<MeuDia>("/api/meu-dia"),
+};
+
 export const agendamentosApi = {
   list: (data?: string) =>
     api<Agendamento[]>(`/api/agendamentos${data ? `?data=${encodeURIComponent(data)}` : ""}`),
 
   listarPorCliente: (clienteId: number) =>
     api<Agendamento[]>(`/api/agendamentos/cliente/${clienteId}`),
+
+  listarHistorico: (clienteId: number) =>
+    api<Agendamento[]>(`/api/agendamentos/cliente/${clienteId}/historico`),
 
   create: (agendamento: AgendamentoInput) =>
     api<Agendamento>("/api/agendamentos", {
@@ -259,6 +299,11 @@ export const agendamentosApi = {
   remove: (id: number) =>
     api<void>(`/api/agendamentos/${id}`, {
       method: "DELETE",
+    }),
+
+  concluir: (id: number) =>
+    api<Agendamento>(`/api/agendamentos/${id}/concluir`, {
+      method: "PATCH",
     }),
 };
 
