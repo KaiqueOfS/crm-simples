@@ -1,20 +1,31 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { CalendarDays } from "lucide-react";
+import { CalendarDays, MessageCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { CATEGORIA_CFG } from "@/components/agenda/AgendaItem";
 import { HOJE_CHAVE } from "@/lib/datas";
 import { agendamentosApi, type Agendamento } from "@/lib/api";
+import { linkWhatsapp } from "@/lib/utils/whatsapp";
 
 /**
  * Seção "Próximos compromissos" do painel de detalhes do cliente — usa o
  * vínculo real `clienteId` (Fase 7) via GET /api/agendamentos/cliente/{id}.
  * Mostra só hoje em diante; compromissos passados ficam para uma futura
  * seção de Histórico (fora do escopo desta fase).
+ *
+ * `telefoneCliente` vem como prop (o painel-pai já tem o Cliente completo
+ * carregado) em vez de uma busca própria — todo compromisso aqui já é,
+ * por definição, deste mesmo cliente, então o telefone é sempre o mesmo.
  */
-export function SecaoProximosCompromissos({ clienteId }: { clienteId: number }) {
+export function SecaoProximosCompromissos({
+  clienteId,
+  telefoneCliente,
+}: {
+  clienteId: number;
+  telefoneCliente: string;
+}) {
   const navigate = useNavigate();
   const [compromissos, setCompromissos] = useState<Agendamento[]>([]);
   const [carregando, setCarregando] = useState(true);
@@ -73,9 +84,18 @@ export function SecaoProximosCompromissos({ clienteId }: { clienteId: number }) 
                     </p>
                     <p className="truncate text-sm font-medium text-foreground">{compromisso.titulo}</p>
                   </div>
-                  <span className={cn("shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium", cfg.selo)}>
-                    {cfg.rotulo}
-                  </span>
+                  <div className="flex shrink-0 items-center gap-1.5">
+                    <span className={cn("rounded-full px-2 py-0.5 text-[10px] font-medium", cfg.selo)}>
+                      {cfg.rotulo}
+                    </span>
+                    <button
+                      onClick={() => window.open(linkWhatsapp(telefoneCliente), "_blank", "noopener,noreferrer")}
+                      aria-label="Abrir WhatsApp"
+                      className="flex h-6 w-6 items-center justify-center rounded-full text-muted-foreground orbis-transition hover:bg-accent hover:text-foreground"
+                    >
+                      <MessageCircle className="h-3.5 w-3.5" strokeWidth={1.75} />
+                    </button>
+                  </div>
                 </div>
               </Card>
             );

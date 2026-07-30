@@ -1,5 +1,9 @@
+import { useState, type MouseEvent } from "react";
+import { MessageCircle } from "lucide-react";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import type { Agendamento, CategoriaAgendamento } from "@/lib/api";
+import { clientesApi, type Agendamento, type CategoriaAgendamento } from "@/lib/api";
+import { linkWhatsapp } from "@/lib/utils/whatsapp";
 
 /**
  * Configuração visual por categoria — cor do indicador, do selo de tipo e
@@ -30,6 +34,25 @@ export function AgendaItem({
   aoExcluir: () => void;
 }) {
   const cfg = CATEGORIA_CFG[compromisso.categoria];
+  const [abrindoWhatsapp, setAbrindoWhatsapp] = useState(false);
+
+  // O compromisso só guarda o clienteId — o telefone vive no Cliente, então
+  // é buscado sob demanda (só quando o usuário clica), sem correspondência
+  // por nome e sem carregar a lista de clientes inteira para cada item.
+  async function abrirWhatsapp(e: MouseEvent) {
+    e.stopPropagation();
+    if (!compromisso.clienteId) return;
+
+    setAbrindoWhatsapp(true);
+    try {
+      const cliente = await clientesApi.get(compromisso.clienteId);
+      window.open(linkWhatsapp(cliente.telefone), "_blank", "noopener,noreferrer");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Não foi possível abrir o WhatsApp deste cliente.");
+    } finally {
+      setAbrindoWhatsapp(false);
+    }
+  }
 
   return (
     <div
@@ -84,6 +107,16 @@ export function AgendaItem({
               >
                 Excluir
               </button>
+              {compromisso.clienteId != null && (
+                <button
+                  onClick={abrirWhatsapp}
+                  disabled={abrindoWhatsapp}
+                  className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-border bg-background py-2 text-xs font-medium text-muted-foreground orbis-transition hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <MessageCircle className="h-3.5 w-3.5" strokeWidth={1.75} />
+                  WhatsApp
+                </button>
+              )}
             </div>
           </div>
         )}

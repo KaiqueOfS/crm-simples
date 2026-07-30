@@ -206,6 +206,8 @@ export const clientesApi = {
     return api<Pagina<Cliente>>(`/api/clientes?${parametros.toString()}`);
   },
 
+  get: (id: number) => api<Cliente>(`/api/clientes/${id}`),
+
   create: (c: Omit<Cliente, "id">) =>
     api<Cliente>("/api/clientes", {
       method: "POST",

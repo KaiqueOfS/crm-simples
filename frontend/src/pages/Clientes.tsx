@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { ClienteFormDialog, type ClienteFormValues } from "@/components/clientes/ClienteFormDialog";
 import { SecaoProximosCompromissos } from "@/components/clientes/SecaoProximosCompromissos";
 import { clientesApi, STATUS_LIST, type Cliente, type Status } from "@/lib/api";
+import { linkWhatsapp } from "@/lib/utils/whatsapp";
 
 /**
  * Tela operacional principal: listagem, busca, filtro por status, cadastro,
@@ -30,13 +31,6 @@ const STATUS_CFG: Record<Status, { rotulo: string; selo: string }> = {
   GANHO:      { rotulo: "Ganho",       selo: "bg-orbis-green-tint text-orbis-green"   },
   PERDIDO:    { rotulo: "Perdido",     selo: "bg-orbis-red-tint text-orbis-red"       },
 };
-
-/** Link para o WhatsApp Web/app a partir do telefone já cadastrado (sem chamada de API). */
-function linkWhatsapp(telefone: string): string {
-  const digitos = telefone.replace(/\D/g, "");
-  const numero = digitos.length <= 11 ? `55${digitos}` : digitos;
-  return `https://wa.me/${numero}`;
-}
 
 /** Formata o `createdAt` (já vindo da API) para "Cliente desde 15 de jan. de 2026". */
 function clienteDesde(createdAt: string): string {
@@ -352,7 +346,7 @@ function DetalheConteudo({
           </div>
         )}
         <SecaoObservacoes cliente={cliente} />
-        <SecaoProximosCompromissos clienteId={cliente.id} />
+        <SecaoProximosCompromissos clienteId={cliente.id} telefoneCliente={cliente.telefone} />
         {/*
           Próximas seções (histórico, arquivos e integração com Financeiro)
           entram aqui como novos blocos, seguindo o mesmo padrão de
