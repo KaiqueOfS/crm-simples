@@ -159,6 +159,7 @@ export type Agendamento = {
   id: number;
   titulo: string;
   pessoa: string;
+  clienteId: number | null;
   data: string;
   hora: string;
   categoria: CategoriaAgendamento;

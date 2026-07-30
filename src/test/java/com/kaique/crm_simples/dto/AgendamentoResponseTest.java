@@ -1,6 +1,7 @@
 package com.kaique.crm_simples.dto;
 
 import com.kaique.crm_simples.model.Agendamento;
+import com.kaique.crm_simples.model.Cliente;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -9,6 +10,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 class AgendamentoResponseTest {
 
@@ -32,5 +34,24 @@ class AgendamentoResponseTest {
         assertEquals("Visita técnica", resposta.titulo());
         assertEquals(criadoEm, resposta.createdAt());
         assertEquals(atualizadoEm, resposta.updatedAt());
+        assertNull(resposta.clienteId());
+    }
+
+    @Test
+    void deExpoeClienteIdQuandoAgendamentoTemClienteVinculado() {
+        Cliente cliente = new Cliente();
+        cliente.setId(9L);
+        cliente.setNome("Carlos Oliveira");
+
+        Agendamento agendamento = new Agendamento();
+        agendamento.setTitulo("Troca de óleo");
+        agendamento.setPessoa("Carlos Oliveira");
+        agendamento.setCliente(cliente);
+        agendamento.setData(LocalDate.of(2026, 2, 1));
+        agendamento.setHora(LocalTime.of(9, 0));
+
+        AgendamentoResponse resposta = AgendamentoResponse.de(agendamento);
+
+        assertEquals(9L, resposta.clienteId());
     }
 }

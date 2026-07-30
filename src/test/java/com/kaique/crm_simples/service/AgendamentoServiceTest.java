@@ -4,9 +4,12 @@ import com.kaique.crm_simples.dto.AgendamentoRequest;
 import com.kaique.crm_simples.dto.AgendamentoResponse;
 import com.kaique.crm_simples.exception.AcessoNegadoException;
 import com.kaique.crm_simples.exception.AgendamentoNaoEncontradoException;
+import com.kaique.crm_simples.exception.ClienteNaoEncontradoException;
 import com.kaique.crm_simples.model.Agendamento;
+import com.kaique.crm_simples.model.Cliente;
 import com.kaique.crm_simples.model.Usuario;
 import com.kaique.crm_simples.repository.AgendamentoRepository;
+import com.kaique.crm_simples.repository.ClienteRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -20,6 +23,7 @@ import java.time.LocalTime;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
@@ -39,6 +43,9 @@ class AgendamentoServiceTest {
     private AgendamentoRepository repository;
 
     @Mock
+    private ClienteRepository clienteRepository;
+
+    @Mock
     private UsuarioAutenticadoService usuarioAutenticadoService;
 
     private AgendamentoService service;
@@ -46,7 +53,7 @@ class AgendamentoServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new AgendamentoService(repository, usuarioAutenticadoService);
+        service = new AgendamentoService(repository, clienteRepository, usuarioAutenticadoService);
         usuarioLogado = usuarioComId(1L);
         when(usuarioAutenticadoService.obterUsuarioLogado()).thenReturn(usuarioLogado);
     }
@@ -105,10 +112,88 @@ class AgendamentoServiceTest {
         assertEquals("Visita técnica", resposta.titulo());
     }
 
+    @Test
+    void mantemPessoaLivreQuandoClienteIdAusente() {
+        AgendamentoRequest request = new AgendamentoRequest();
+        request.setTitulo("Ligação");
+        request.setPessoa("Qualquer pessoa");
+        request.setData(LocalDate.now());
+        request.setHora(LocalTime.of(9, 0));
+
+        when(repository.save(any(Agendamento.class))).thenAnswer(invocacao -> invocacao.getArgument(0));
+
+        service.salvar(request);
+
+        ArgumentCaptor<Agendamento> captor = ArgumentCaptor.forClass(Agendamento.class);
+        verify(repository).save(captor.capture());
+
+        assertEquals("Qualquer pessoa", captor.getValue().getPessoa());
+        assertNull(captor.getValue().getCliente());
+    }
+
+    @Test
+    void associaClienteESincronizaPessoaQuandoClienteIdValido() {
+        Cliente cliente = clienteComId(5L, usuarioLogado);
+        when(clienteRepository.findById(5L)).thenReturn(Optional.of(cliente));
+
+        AgendamentoRequest request = new AgendamentoRequest();
+        request.setTitulo("Visita técnica");
+        request.setClienteId(5L);
+        request.setData(LocalDate.now());
+        request.setHora(LocalTime.of(9, 0));
+
+        when(repository.save(any(Agendamento.class))).thenAnswer(invocacao -> invocacao.getArgument(0));
+
+        service.salvar(request);
+
+        ArgumentCaptor<Agendamento> captor = ArgumentCaptor.forClass(Agendamento.class);
+        verify(repository).save(captor.capture());
+
+        assertSame(cliente, captor.getValue().getCliente());
+        assertEquals(cliente.getNome(), captor.getValue().getPessoa());
+    }
+
+    @Test
+    void lancaExcecaoQuandoClienteIdNaoExiste() {
+        when(clienteRepository.findById(999L)).thenReturn(Optional.empty());
+
+        AgendamentoRequest request = new AgendamentoRequest();
+        request.setTitulo("Visita técnica");
+        request.setClienteId(999L);
+        request.setData(LocalDate.now());
+        request.setHora(LocalTime.of(9, 0));
+
+        assertThrows(ClienteNaoEncontradoException.class, () -> service.salvar(request));
+        verify(repository, never()).save(any(Agendamento.class));
+    }
+
+    @Test
+    void lancaExcecaoQuandoClienteIdPertenceAOutroUsuario() {
+        Cliente clienteDeOutroUsuario = clienteComId(5L, usuarioComId(2L));
+        when(clienteRepository.findById(5L)).thenReturn(Optional.of(clienteDeOutroUsuario));
+
+        AgendamentoRequest request = new AgendamentoRequest();
+        request.setTitulo("Visita técnica");
+        request.setClienteId(5L);
+        request.setData(LocalDate.now());
+        request.setHora(LocalTime.of(9, 0));
+
+        assertThrows(AcessoNegadoException.class, () -> service.salvar(request));
+        verify(repository, never()).save(any(Agendamento.class));
+    }
+
     private Usuario usuarioComId(Long id) {
         Usuario usuario = new Usuario();
         ReflectionTestUtils.setField(usuario, "id", id);
         usuario.setEmail("usuario" + id + "@teste.local");
         return usuario;
+    }
+
+    private Cliente clienteComId(Long id, Usuario dono) {
+        Cliente cliente = new Cliente();
+        cliente.setId(id);
+        cliente.setNome("Cliente " + id);
+        cliente.setUsuario(dono);
+        return cliente;
     }
 }

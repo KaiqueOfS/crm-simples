@@ -29,8 +29,18 @@ public class Agendamento {
     @NotBlank(message = "Título é obrigatório")
     private String titulo;
 
-    // Nome da pessoa envolvida (opcional — pode ser cliente ou qualquer pessoa)
+    // Nome da pessoa envolvida (opcional — pode ser cliente ou qualquer pessoa).
+    // Mantido por compatibilidade; quando "cliente" está preenchido, este
+    // campo é sincronizado automaticamente pelo AgendamentoService a partir
+    // de cliente.getNome() (ver docs/FLYWAY.md, V3).
     private String pessoa;
+
+    // Cliente vinculado ao agendamento (opcional — nem todo compromisso tem
+    // um cliente cadastrado). Nullable de propósito: agendamentos antigos
+    // não têm como ser associados com segurança (ver V3__add_cliente_id_agendamentos.sql).
+    @ManyToOne
+    @JoinColumn(name = "cliente_id")
+    private Cliente cliente;
 
     // Data do agendamento (obrigatório)
     @NotNull(message = "Data é obrigatória")
@@ -72,6 +82,9 @@ public class Agendamento {
 
     public String getPessoa() { return pessoa; }
     public void setPessoa(String pessoa) { this.pessoa = pessoa; }
+
+    public Cliente getCliente() { return cliente; }
+    public void setCliente(Cliente cliente) { this.cliente = cliente; }
 
     public LocalDate getData() { return data; }
     public void setData(LocalDate data) { this.data = data; }

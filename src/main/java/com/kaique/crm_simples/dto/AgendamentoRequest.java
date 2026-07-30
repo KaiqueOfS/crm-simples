@@ -19,6 +19,12 @@ public class AgendamentoRequest {
 
     private String pessoa;
 
+    // Opcional nesta fase: quando informado, o service resolve o Cliente
+    // (garantindo que pertence ao usuário autenticado) e sincroniza "pessoa"
+    // a partir do nome dele. Ausente, o comportamento é o mesmo de antes
+    // (pessoa como texto livre).
+    private Long clienteId;
+
     @NotNull(message = "Data é obrigatória")
     private LocalDate data;
 
@@ -34,6 +40,9 @@ public class AgendamentoRequest {
 
     public String getPessoa() { return pessoa; }
     public void setPessoa(String pessoa) { this.pessoa = pessoa; }
+
+    public Long getClienteId() { return clienteId; }
+    public void setClienteId(Long clienteId) { this.clienteId = clienteId; }
 
     public LocalDate getData() { return data; }
     public void setData(LocalDate data) { this.data = data; }

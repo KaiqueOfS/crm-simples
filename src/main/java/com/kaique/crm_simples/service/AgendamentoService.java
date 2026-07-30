@@ -4,9 +4,12 @@ import com.kaique.crm_simples.dto.AgendamentoRequest;
 import com.kaique.crm_simples.dto.AgendamentoResponse;
 import com.kaique.crm_simples.exception.AcessoNegadoException;
 import com.kaique.crm_simples.exception.AgendamentoNaoEncontradoException;
+import com.kaique.crm_simples.exception.ClienteNaoEncontradoException;
 import com.kaique.crm_simples.model.Agendamento;
+import com.kaique.crm_simples.model.Cliente;
 import com.kaique.crm_simples.model.Usuario;
 import com.kaique.crm_simples.repository.AgendamentoRepository;
+import com.kaique.crm_simples.repository.ClienteRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -29,12 +32,15 @@ public class AgendamentoService {
     private static final Logger log = LoggerFactory.getLogger(AgendamentoService.class);
 
     private final AgendamentoRepository repository;
+    private final ClienteRepository clienteRepository;
     private final UsuarioAutenticadoService usuarioAutenticadoService;
 
     public AgendamentoService(
             AgendamentoRepository repository,
+            ClienteRepository clienteRepository,
             UsuarioAutenticadoService usuarioAutenticadoService) {
         this.repository = repository;
+        this.clienteRepository = clienteRepository;
         this.usuarioAutenticadoService = usuarioAutenticadoService;
     }
 
@@ -82,12 +88,12 @@ public class AgendamentoService {
 
         Agendamento agendamento = new Agendamento();
         agendamento.setTitulo(request.getTitulo());
-        agendamento.setPessoa(request.getPessoa());
         agendamento.setData(request.getData());
         agendamento.setHora(request.getHora());
         agendamento.setCategoria(request.getCategoria());
         agendamento.setLembrete(request.getLembrete());
         agendamento.setUsuario(usuario);
+        aplicarCliente(agendamento, request, usuario);
 
         Agendamento salvo = repository.save(agendamento);
         log.info("Agendamento criado: id={} usuario={}", salvo.getId(), usuario.getEmail());
@@ -101,12 +107,39 @@ public class AgendamentoService {
     public AgendamentoResponse atualizar(Long id, AgendamentoRequest request) {
         Agendamento agendamento = buscarDoUsuario(id);
         agendamento.setTitulo(request.getTitulo());
-        agendamento.setPessoa(request.getPessoa());
         agendamento.setData(request.getData());
         agendamento.setHora(request.getHora());
         agendamento.setCategoria(request.getCategoria());
         agendamento.setLembrete(request.getLembrete());
+        aplicarCliente(agendamento, request, agendamento.getUsuario());
         return AgendamentoResponse.de(repository.save(agendamento));
+    }
+
+    /**
+     * Resolve e aplica o cliente vinculado ao agendamento, quando informado.
+     *
+     * Se "clienteId" vier no request, busca o Cliente garantindo que
+     * pertence ao mesmo usuário do agendamento (mesma checagem de
+     * ClienteService.buscarClienteDoUsuario) e sincroniza "pessoa" a partir
+     * do nome dele. Sem "clienteId", mantém o comportamento anterior:
+     * "pessoa" como texto livre, sem cliente vinculado.
+     */
+    private void aplicarCliente(Agendamento agendamento, AgendamentoRequest request, Usuario usuario) {
+        if (request.getClienteId() == null) {
+            agendamento.setCliente(null);
+            agendamento.setPessoa(request.getPessoa());
+            return;
+        }
+
+        Cliente cliente = clienteRepository.findById(request.getClienteId())
+                .orElseThrow(() -> new ClienteNaoEncontradoException(request.getClienteId()));
+
+        if (!cliente.getUsuario().getId().equals(usuario.getId())) {
+            throw new AcessoNegadoException();
+        }
+
+        agendamento.setCliente(cliente);
+        agendamento.setPessoa(cliente.getNome());
     }
 
     /**

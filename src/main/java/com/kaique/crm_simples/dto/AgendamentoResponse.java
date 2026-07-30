@@ -12,11 +12,17 @@ import java.time.LocalTime;
  * "createdAt"/"updatedAt" são só leitura: vêm de @CreationTimestamp/
  * @UpdateTimestamp na entidade (ver docs/DATA-AUDIT.md) e nunca
  * aparecem em AgendamentoRequest.
+ *
+ * "clienteId" é null quando o agendamento não está vinculado a um cliente
+ * (ver V3__add_cliente_id_agendamentos.sql). "pessoa" continua presente e
+ * sincronizado com o nome do cliente pelo AgendamentoService, para telas
+ * que só precisam exibir o nome sem buscar a lista de clientes de novo.
  */
 public record AgendamentoResponse(
         Long id,
         String titulo,
         String pessoa,
+        Long clienteId,
         LocalDate data,
         LocalTime hora,
         String categoria,
@@ -29,6 +35,7 @@ public record AgendamentoResponse(
                 agendamento.getId(),
                 agendamento.getTitulo(),
                 agendamento.getPessoa(),
+                agendamento.getCliente() != null ? agendamento.getCliente().getId() : null,
                 agendamento.getData(),
                 agendamento.getHora(),
                 agendamento.getCategoria(),

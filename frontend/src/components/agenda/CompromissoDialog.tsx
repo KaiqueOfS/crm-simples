@@ -11,19 +11,12 @@ import { SeletorCategoria } from "./SeletorCategoria";
  * Modal de criação/edição de compromisso, no mesmo padrão do
  * `ClienteFormDialog`: usa os primitivos `Dialog` do Design System.
  *
- * O backend (`Agendamento`) não tem relação com `Cliente` — só um campo de
- * texto livre `pessoa`. Por isso o campo "Cliente*" aqui é um select com os
- * clientes reais cadastrados (via `clientesApi.list`), e ao salvar o nome do
- * cliente escolhido é gravado nesse campo `pessoa` já existente. Nenhuma API
- * nova, nenhum dado inventado — só garante que todo compromisso aponte para
- * um cliente cadastrado, em vez de texto livre.
- *
- * Preparado para quando o backend ganhar um `clienteId` real em
- * `Agendamento`: o select já busca e exibe clientes reais — só a escrita
- * final trocaria (`clienteId: clienteEscolhido.id` no lugar de
- * `pessoa: clienteEscolhido.nome`). É esse `clienteId` que o Meu Dia
- * (`Hoje.tsx`) vai precisar para oferecer um botão de WhatsApp usando o
- * telefone do cliente relacionado, em vez de casar por nome.
+ * Desde a Fase 7, `Agendamento` tem um vínculo real com `Cliente`
+ * (`clienteId`, coluna `cliente_id` no backend) — o select "Cliente*" busca
+ * os clientes reais (via `clientesApi.list`) e a seleção vira `clienteId` no
+ * payload. O backend sincroniza `pessoa` a partir do nome do cliente
+ * automaticamente; aqui só enviamos os dois por compatibilidade com o tipo
+ * `AgendamentoInput`.
  *
  * "Observação" não existe no backend (Agendamento não tem essa coluna) —
  * por isso não aparece neste formulário nesta fase; entra quando o backend
@@ -38,12 +31,11 @@ type CompromissoFormValues = {
   categoria: CategoriaAgendamento;
 };
 
-function valoresIniciais(compromisso: Agendamento | null, clientes: Cliente[], dataPadrao: string): CompromissoFormValues {
+function valoresIniciais(compromisso: Agendamento | null, dataPadrao: string): CompromissoFormValues {
   if (compromisso) {
-    const clienteCorrespondente = clientes.find((c) => c.nome === compromisso.pessoa);
     return {
       titulo: compromisso.titulo,
-      clienteId: clienteCorrespondente ? clienteCorrespondente.id : "",
+      clienteId: compromisso.clienteId ?? "",
       data: compromisso.data,
       hora: compromisso.hora,
       categoria: compromisso.categoria,
@@ -67,7 +59,7 @@ export function CompromissoDialog({
 }) {
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [carregandoClientes, setCarregandoClientes] = useState(false);
-  const [valores, setValores] = useState<CompromissoFormValues>(() => valoresIniciais(compromisso, [], dataPadrao));
+  const [valores, setValores] = useState<CompromissoFormValues>(() => valoresIniciais(compromisso, dataPadrao));
   const [salvando, setSalvando] = useState(false);
   const [clienteObrigatorio, setClienteObrigatorio] = useState(false);
 
@@ -82,10 +74,10 @@ export function CompromissoDialog({
 
   useEffect(() => {
     if (aberto) {
-      setValores(valoresIniciais(compromisso, clientes, dataPadrao));
+      setValores(valoresIniciais(compromisso, dataPadrao));
       setClienteObrigatorio(false);
     }
-  }, [aberto, compromisso, clientes, dataPadrao]);
+  }, [aberto, compromisso, dataPadrao]);
 
   async function aoSubmeter(e: FormEvent) {
     e.preventDefault();
@@ -100,6 +92,7 @@ export function CompromissoDialog({
       await aoSalvar({
         titulo: valores.titulo,
         pessoa: clienteEscolhido.nome,
+        clienteId: clienteEscolhido.id,
         data: valores.data,
         hora: valores.hora,
         categoria: valores.categoria,
