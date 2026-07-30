@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { AlertTriangle, FileText, Users } from "lucide-react";
+import { AlertTriangle, ChevronDown, FileText, MessageCircle, Plus, Search, Users, X } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Avatar } from "@/components/ui/avatar-inicial";
@@ -10,22 +10,33 @@ import { Textarea } from "@/components/ui/textarea";
 import { clientesApi, STATUS_LIST, type Cliente, type Status } from "@/lib/api";
 
 /**
- * Gestão de clientes: listagem, busca, filtro por status, cadastro, edição,
- * exclusão e mudança de etapa no funil — tudo integrado à API real.
+ * Tela operacional principal: listagem, busca, filtro por status, cadastro,
+ * edição, exclusão e mudança de etapa no funil — tudo integrado à API real.
  *
- * Histórico, próxima ação e painel de atenções ainda não têm suporte no
- * backend. Quando existirem, entram como um novo bloco dentro de
- * `DetalheCliente` sem precisar mexer no restante da página.
+ * Layout em split-view a partir do breakpoint `lg`: lista à esquerda, painel
+ * de detalhes fixo à direita. Em telas menores o detalhe abre como bottom
+ * sheet. O conteúdo do detalhe fica isolado em `DetalheConteudo`: cabeçalho
+ * (nome, status editável, telefone) → informações (e-mail, quando existir)
+ * → observações → ações rápidas (WhatsApp, Editar). Histórico, próxima ação,
+ * arquivos e integração com Agenda/Financeiro entram como novos blocos nesse
+ * mesmo padrão quando o backend passar a suportar esses dados.
  */
 
 const STATUS_CFG: Record<Status, { rotulo: string; selo: string }> = {
-  NOVO:       { rotulo: "Novo contato",     selo: "bg-orbis-blue-tint text-orbis-blue"     },
-  CONTATADO:  { rotulo: "Aguardando resp.", selo: "bg-orbis-purple-tint text-orbis-purple" },
-  NEGOCIACAO: { rotulo: "Em conversa",      selo: "bg-orbis-amber-tint text-orbis-amber"   },
-  PROPOSTA:   { rotulo: "Proposta enviada", selo: "bg-orbis-blue-tint text-orbis-blue"     },
-  GANHO:      { rotulo: "Fechado",          selo: "bg-orbis-green-tint text-orbis-green"   },
-  PERDIDO:    { rotulo: "Não fechou",       selo: "bg-orbis-red-tint text-orbis-red"       },
+  NOVO:       { rotulo: "Novo",        selo: "bg-orbis-blue-tint text-orbis-blue"     },
+  CONTATADO:  { rotulo: "Contatado",   selo: "bg-orbis-purple-tint text-orbis-purple" },
+  NEGOCIACAO: { rotulo: "Negociação",  selo: "bg-orbis-amber-tint text-orbis-amber"   },
+  PROPOSTA:   { rotulo: "Proposta",    selo: "bg-orbis-blue-tint text-orbis-blue"     },
+  GANHO:      { rotulo: "Ganho",       selo: "bg-orbis-green-tint text-orbis-green"   },
+  PERDIDO:    { rotulo: "Perdido",     selo: "bg-orbis-red-tint text-orbis-red"       },
 };
+
+/** Link para o WhatsApp Web/app a partir do telefone já cadastrado (sem chamada de API). */
+function linkWhatsapp(telefone: string): string {
+  const digitos = telefone.replace(/\D/g, "");
+  const numero = digitos.length <= 11 ? `55${digitos}` : digitos;
+  return `https://wa.me/${numero}`;
+}
 
 type ClienteFormValues = {
   nome: string;
@@ -43,6 +54,7 @@ export default function Clientes() {
   const [erro, setErro] = useState<string | null>(null);
 
   const [busca, setBusca] = useState("");
+  const [buscaEfetiva, setBuscaEfetiva] = useState("");
   const [filtroStatus, setFiltroStatus] = useState<Status | "TODOS">("TODOS");
 
   const [clienteSelecionado, setClienteSelecionado] = useState<Cliente | null>(null);
@@ -50,9 +62,16 @@ export default function Clientes() {
   const [formAberto, setFormAberto] = useState(false);
   const [clienteParaExcluir, setClienteParaExcluir] = useState<Cliente | null>(null);
 
+  // Pesquisa instantânea: aguarda uma pequena pausa de digitação antes de
+  // consultar a API, para não disparar uma requisição a cada tecla.
+  useEffect(() => {
+    const id = setTimeout(() => setBuscaEfetiva(busca), 300);
+    return () => clearTimeout(id);
+  }, [busca]);
+
   useEffect(() => {
     void carregarClientes();
-  }, [busca, filtroStatus]);
+  }, [buscaEfetiva, filtroStatus]);
 
   async function carregarClientes() {
     setCarregando(true);
@@ -60,7 +79,7 @@ export default function Clientes() {
     try {
       const resposta = await clientesApi.list({
         tamanho: 50,
-        termo: busca || undefined,
+        termo: buscaEfetiva || undefined,
         status: filtroStatus === "TODOS" ? undefined : filtroStatus,
       });
       setClientes(resposta.conteudo);
@@ -80,7 +99,6 @@ export default function Clientes() {
   function abrirEdicao(cliente: Cliente) {
     setClienteEmEdicao(cliente);
     setFormAberto(true);
-    setClienteSelecionado(null);
   }
 
   async function salvarCliente(valores: ClienteFormValues) {
@@ -88,6 +106,7 @@ export default function Clientes() {
       if (clienteEmEdicao) {
         const atualizado = await clientesApi.update(clienteEmEdicao.id, { ...valores, status: clienteEmEdicao.status });
         setClientes((atual) => atual.map((c) => (c.id === atualizado.id ? atualizado : c)));
+        setClienteSelecionado((atual) => (atual && atual.id === atualizado.id ? atualizado : atual));
         toast.success("Cliente atualizado");
       } else {
         const criado = await clientesApi.create({ ...valores, status: "NOVO" });
@@ -109,8 +128,8 @@ export default function Clientes() {
       setClientes((atual) => atual.filter((c) => c.id !== clienteParaExcluir.id));
       setTotalClientes((t) => Math.max(0, t - 1));
       toast.success("Cliente removido");
+      setClienteSelecionado((atual) => (atual && atual.id === clienteParaExcluir.id ? null : atual));
       setClienteParaExcluir(null);
-      setClienteSelecionado(null);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Não foi possível remover o cliente.");
     }
@@ -127,38 +146,31 @@ export default function Clientes() {
     }
   }
 
-  const semResultado = busca !== "" || filtroStatus !== "TODOS";
+  const semResultado = buscaEfetiva !== "" || filtroStatus !== "TODOS";
 
   return (
-    <div className="mx-auto max-w-[1200px] p-4 sm:p-6 lg:p-8">
+    <div className="mx-auto max-w-[1400px] p-4 sm:p-6 lg:p-8">
 
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-xl font-semibold tracking-tight text-foreground">Clientes</h1>
           <p className="mt-0.5 text-sm text-muted-foreground">{totalClientes} clientes no funil</p>
         </div>
-        <button
-          onClick={abrirCriacao}
-          className="flex w-fit items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-medium text-primary-foreground orbis-transition hover:opacity-90"
-        >
-          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-          </svg>
+        <Button onClick={abrirCriacao} variant="outline" size="sm" className="w-fit gap-1.5">
+          <Plus className="h-4 w-4" strokeWidth={1.75} />
           Novo cliente
-        </button>
+        </Button>
       </div>
 
       {/* Filtros */}
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center">
-        <div className="relative flex-1">
-          <svg className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
-          </svg>
-          <input
+        <div className="relative flex-1 sm:max-w-xs">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" strokeWidth={1.75} />
+          <Input
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
             placeholder="Buscar cliente…"
-            className="h-9 w-full rounded-xl border border-border bg-card pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring orbis-transition"
+            className="h-9 pl-9"
           />
         </div>
 
@@ -180,46 +192,81 @@ export default function Clientes() {
         </div>
       </div>
 
-      {/* Conteúdo */}
-      {erro ? (
-        <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-orbis-red-tint py-20 text-center">
-          <AlertTriangle className="mb-2 h-8 w-8 text-orbis-red/70" strokeWidth={1.5} />
-          <p className="text-sm font-medium text-foreground">Não foi possível carregar os clientes</p>
-          <p className="mt-1 text-xs text-muted-foreground">{erro}</p>
-          <Button variant="outline" size="sm" className="mt-4" onClick={() => void carregarClientes()}>
-            Tentar novamente
-          </Button>
-        </div>
-      ) : carregando ? (
-        <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border py-20 text-center">
-          <p className="text-sm text-muted-foreground">Carregando clientes…</p>
-        </div>
-      ) : clientes.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border py-20 text-center">
-          <Users className="mb-2 h-8 w-8 text-muted-foreground/50" strokeWidth={1.5} />
-          <p className="text-sm font-medium text-foreground">
-            {semResultado ? "Nenhum cliente encontrado" : "Nenhum cliente cadastrado"}
-          </p>
-          <p className="mt-1 text-xs text-muted-foreground">
-            {semResultado ? "Tente outro termo ou filtro" : "Adicione seu primeiro cliente"}
-          </p>
-        </div>
-      ) : (
-        <div className="overflow-hidden rounded-2xl border border-border bg-card">
-          {clientes.map((cliente) => (
-            <CardCliente key={cliente.id} cliente={cliente} aoClicar={() => setClienteSelecionado(cliente)} />
-          ))}
-        </div>
-      )}
+      {/* Lista + painel lateral */}
+      <div className="grid gap-4 lg:grid-cols-[380px_1fr] lg:items-start">
 
+        {/* Lista */}
+        <div>
+          {erro ? (
+            <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-orbis-red-tint py-20 text-center">
+              <AlertTriangle className="mb-2 h-8 w-8 text-orbis-red/70" strokeWidth={1.5} />
+              <p className="text-sm font-medium text-foreground">Não foi possível carregar os clientes</p>
+              <p className="mt-1 text-xs text-muted-foreground">{erro}</p>
+              <Button variant="outline" size="sm" className="mt-4" onClick={() => void carregarClientes()}>
+                Tentar novamente
+              </Button>
+            </div>
+          ) : carregando ? (
+            <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border py-20 text-center">
+              <p className="text-sm text-muted-foreground">Carregando clientes…</p>
+            </div>
+          ) : clientes.length === 0 ? (
+            <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border py-20 text-center">
+              <Users className="mb-2 h-8 w-8 text-muted-foreground/50" strokeWidth={1.5} />
+              <p className="text-sm font-medium text-foreground">
+                {semResultado ? "Nenhum cliente encontrado" : "Nenhum cliente cadastrado"}
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                {semResultado ? "Tente outro termo ou filtro" : "Adicione seu primeiro cliente"}
+              </p>
+            </div>
+          ) : (
+            <div className="overflow-hidden rounded-2xl border border-border bg-card">
+              {clientes.map((cliente) => (
+                <CardCliente
+                  key={cliente.id}
+                  cliente={cliente}
+                  selecionado={cliente.id === clienteSelecionado?.id}
+                  aoClicar={() => setClienteSelecionado(cliente)}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Painel lateral de detalhes (desktop) */}
+        <div className="hidden overflow-hidden rounded-2xl border border-border bg-card lg:sticky lg:top-6 lg:block">
+          {clienteSelecionado ? (
+            <DetalheConteudo
+              cliente={clienteSelecionado}
+              aoFechar={() => setClienteSelecionado(null)}
+              aoEditar={() => abrirEdicao(clienteSelecionado)}
+              aoExcluir={() => setClienteParaExcluir(clienteSelecionado)}
+              aoMudarStatus={(status) => mudarStatus(clienteSelecionado, status)}
+            />
+          ) : (
+            <div className="flex flex-col items-center justify-center py-24 text-center">
+              <Users className="mb-2 h-8 w-8 text-muted-foreground/40" strokeWidth={1.5} />
+              <p className="text-sm text-muted-foreground">Selecione um cliente para ver os detalhes</p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Detalhe em bottom sheet (mobile/tablet) */}
       {clienteSelecionado && (
-        <DetalheCliente
-          cliente={clienteSelecionado}
-          aoFechar={() => setClienteSelecionado(null)}
-          aoEditar={() => abrirEdicao(clienteSelecionado)}
-          aoExcluir={() => setClienteParaExcluir(clienteSelecionado)}
-          aoMudarStatus={(status) => mudarStatus(clienteSelecionado, status)}
-        />
+        <div className="fixed inset-0 z-50 flex items-end justify-center p-0 lg:hidden">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setClienteSelecionado(null)} />
+          <div className="relative z-10 flex max-h-[90vh] w-full flex-col overflow-hidden rounded-t-2xl border border-border bg-card">
+            <DetalheConteudo
+              cliente={clienteSelecionado}
+              aoFechar={() => setClienteSelecionado(null)}
+              aoEditar={() => abrirEdicao(clienteSelecionado)}
+              aoExcluir={() => setClienteParaExcluir(clienteSelecionado)}
+              aoMudarStatus={(status) => mudarStatus(clienteSelecionado, status)}
+            />
+          </div>
+        </div>
       )}
 
       {formAberto && (
@@ -247,11 +294,14 @@ function SeloStatus({ status }: { status: Status }) {
 }
 
 /* ─── Card de cliente na lista ───────────────────────────── */
-function CardCliente({ cliente, aoClicar }: { cliente: Cliente; aoClicar: () => void }) {
+function CardCliente({ cliente, selecionado, aoClicar }: { cliente: Cliente; selecionado: boolean; aoClicar: () => void }) {
   return (
     <div
       onClick={aoClicar}
-      className="flex cursor-pointer items-start gap-3 border-b border-border px-4 py-4 orbis-transition last:border-b-0 hover:bg-accent sm:px-5"
+      className={cn(
+        "flex cursor-pointer items-start gap-3 border-b border-border px-4 py-4 orbis-transition last:border-b-0 hover:bg-accent sm:px-5",
+        selecionado && "bg-accent",
+      )}
     >
       <Avatar nome={cliente.nome} tamanho="md" />
       <div className="min-w-0 flex-1">
@@ -267,8 +317,8 @@ function CardCliente({ cliente, aoClicar }: { cliente: Cliente; aoClicar: () => 
   );
 }
 
-/* ─── Painel de detalhe do cliente ───────────────────────── */
-function DetalheCliente({
+/* ─── Conteúdo do painel/detalhe do cliente ──────────────── */
+function DetalheConteudo({
   cliente,
   aoFechar,
   aoEditar,
@@ -282,70 +332,90 @@ function DetalheCliente({
   aoMudarStatus: (status: Status) => void;
 }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center p-0 sm:items-center sm:p-4">
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={aoFechar} />
+    <div className="flex max-h-[90vh] flex-col lg:max-h-[calc(100vh-6rem)]">
 
-      <div className="relative z-10 flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-t-2xl border border-border bg-card sm:rounded-2xl">
-
-        {/* Cabeçalho */}
-        <div className="flex items-start gap-3 border-b border-border p-5">
-          <Avatar nome={cliente.nome} tamanho="lg" />
-          <div className="min-w-0 flex-1">
-            <p className="text-base font-semibold text-foreground">{cliente.nome}</p>
-            <p className="text-sm text-muted-foreground">{cliente.telefone}</p>
-            {cliente.email && <p className="text-xs text-muted-foreground">{cliente.email}</p>}
-            <div className="mt-1.5"><SeloStatus status={cliente.status} /></div>
-          </div>
-          <button onClick={aoFechar} className="shrink-0 rounded-lg p-1.5 text-muted-foreground orbis-transition hover:bg-accent hover:text-foreground">
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
+      {/* Cabeçalho: nome, status (editável) e telefone */}
+      <div className="flex items-start gap-3 border-b border-border p-5">
+        <Avatar nome={cliente.nome} tamanho="lg" />
+        <div className="min-w-0 flex-1">
+          <p className="text-base font-semibold text-foreground">{cliente.nome}</p>
+          <div className="mt-1"><SeloStatusEditavel status={cliente.status} aoMudar={aoMudarStatus} /></div>
+          <p className="mt-1.5 text-sm text-muted-foreground">{cliente.telefone}</p>
         </div>
-
-        {/* Conteúdo */}
-        <div className="flex-1 space-y-4 overflow-y-auto p-5">
-
-          <div className="space-y-1.5">
-            <label className="text-xs font-medium text-muted-foreground">Etapa do funil</label>
-            <select
-              value={cliente.status}
-              onChange={(e) => aoMudarStatus(e.target.value as Status)}
-              className="h-9 w-full rounded-lg border border-border bg-input px-3 text-sm text-foreground outline-none orbis-transition hover:border-border-strong focus:border-ring focus:ring-4 focus:ring-ring/15"
-            >
-              {STATUS_LIST.map((status) => (
-                <option key={status} value={status}>{STATUS_CFG[status].rotulo}</option>
-              ))}
-            </select>
-          </div>
-
-          <div className="space-y-1.5">
-            <label className="text-xs font-medium text-muted-foreground">Observações</label>
-            {cliente.observacoes ? (
-              <div className="rounded-xl border border-border bg-surface-1 p-4 text-sm leading-relaxed text-foreground">
-                {cliente.observacoes}
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center py-10 text-center">
-                <FileText className="mb-2 h-6 w-6 text-muted-foreground/50" strokeWidth={1.5} />
-                <p className="text-sm text-muted-foreground">Nenhuma observação cadastrada</p>
-              </div>
-            )}
-          </div>
-
-          {/*
-            Histórico e próxima ação entram aqui quando o backend passar a
-            suportar esses dados — este bloco pode virar um novo conjunto de
-            abas sem precisar alterar o restante da página.
-          */}
-        </div>
-
-        {/* Ações do rodapé */}
-        <div className="flex gap-2 border-t border-border p-4">
-          <Button className="flex-1" onClick={aoEditar}>Editar</Button>
-          <Button variant="danger" className="flex-1" onClick={aoExcluir}>Excluir</Button>
-        </div>
+        <button onClick={aoFechar} className="shrink-0 rounded-lg p-1.5 text-muted-foreground orbis-transition hover:bg-accent hover:text-foreground">
+          <X className="h-4 w-4" strokeWidth={1.75} />
+        </button>
       </div>
+
+      {/* Informações + observações */}
+      <div className="flex-1 space-y-5 overflow-y-auto p-5">
+        {cliente.email && (
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-muted-foreground">E-mail</label>
+            <p className="text-sm text-foreground">{cliente.email}</p>
+          </div>
+        )}
+        <SecaoObservacoes cliente={cliente} />
+        {/*
+          Próximas seções (histórico, próxima ação, arquivos e integração
+          com Agenda/Financeiro) entram aqui como novos blocos, seguindo o
+          mesmo padrão de SecaoObservacoes, assim que o backend passar a
+          suportar esses dados.
+        */}
+      </div>
+
+      {/* Ações rápidas */}
+      <div className="flex flex-col gap-2 border-t border-border p-4">
+        <div className="flex gap-2">
+          <Button variant="outline" className="flex-1 gap-2" onClick={() => window.open(linkWhatsapp(cliente.telefone), "_blank", "noopener,noreferrer")}>
+            <MessageCircle className="h-4 w-4" strokeWidth={1.75} />
+            WhatsApp
+          </Button>
+          <Button className="flex-1" onClick={aoEditar}>Editar cliente</Button>
+        </div>
+        <button onClick={aoExcluir} className="self-center text-xs text-muted-foreground orbis-transition hover:text-orbis-red">
+          Excluir cliente
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function SeloStatusEditavel({ status, aoMudar }: { status: Status; aoMudar: (status: Status) => void }) {
+  const cfg = STATUS_CFG[status];
+  return (
+    <div className="relative inline-flex">
+      <select
+        value={status}
+        onChange={(e) => aoMudar(e.target.value as Status)}
+        className={cn(
+          "cursor-pointer appearance-none rounded-full py-0.5 pl-2 pr-5 text-[11px] font-medium outline-none orbis-transition hover:opacity-80",
+          cfg.selo,
+        )}
+      >
+        {STATUS_LIST.map((s) => (
+          <option key={s} value={s}>{STATUS_CFG[s].rotulo}</option>
+        ))}
+      </select>
+      <ChevronDown className="pointer-events-none absolute right-1 top-1/2 h-3 w-3 -translate-y-1/2" strokeWidth={2} />
+    </div>
+  );
+}
+
+function SecaoObservacoes({ cliente }: { cliente: Cliente }) {
+  return (
+    <div className="space-y-1.5">
+      <label className="text-xs font-medium text-muted-foreground">Observações</label>
+      {cliente.observacoes ? (
+        <div className="rounded-xl border border-border bg-surface-1 p-4 text-sm leading-relaxed text-foreground">
+          {cliente.observacoes}
+        </div>
+      ) : (
+        <div className="flex flex-col items-center justify-center py-10 text-center">
+          <FileText className="mb-2 h-6 w-6 text-muted-foreground/50" strokeWidth={1.5} />
+          <p className="text-sm text-muted-foreground">Nenhuma observação cadastrada</p>
+        </div>
+      )}
     </div>
   );
 }
@@ -386,9 +456,7 @@ function FormularioCliente({
         <div className="flex items-center justify-between border-b border-border p-5">
           <p className="text-base font-semibold text-foreground">{cliente ? "Editar cliente" : "Novo cliente"}</p>
           <button onClick={aoFechar} className="shrink-0 rounded-lg p-1.5 text-muted-foreground orbis-transition hover:bg-accent hover:text-foreground">
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
+            <X className="h-4 w-4" strokeWidth={1.75} />
           </button>
         </div>
 
