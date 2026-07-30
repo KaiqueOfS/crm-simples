@@ -17,6 +17,13 @@ import { CATEGORIA_CFG } from "./AgendaItem";
  * nova, nenhum dado inventado — só garante que todo compromisso aponte para
  * um cliente cadastrado, em vez de texto livre.
  *
+ * Preparado para quando o backend ganhar um `clienteId` real em
+ * `Agendamento`: o select já busca e exibe clientes reais — só a escrita
+ * final trocaria (`clienteId: clienteEscolhido.id` no lugar de
+ * `pessoa: clienteEscolhido.nome`). É esse `clienteId` que o Meu Dia
+ * (`Hoje.tsx`) vai precisar para oferecer um botão de WhatsApp usando o
+ * telefone do cliente relacionado, em vez de casar por nome.
+ *
  * "Observação" não existe no backend (Agendamento não tem essa coluna) —
  * por isso não aparece neste formulário nesta fase; entra quando o backend
  * expuser o campo.

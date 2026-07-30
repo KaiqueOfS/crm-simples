@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { AlertTriangle, CalendarDays } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -279,6 +280,8 @@ function ConfirmarExclusaoCompromisso({
 
 /* ─── Página principal ───────────────────────────────────── */
 export default function Agenda() {
+  const [searchParams] = useSearchParams();
+
   const [compromissos, setCompromissos] = useState<Agendamento[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
@@ -297,6 +300,18 @@ export default function Agenda() {
   useEffect(() => {
     void carregarCompromissos();
   }, []);
+
+  // Deep-link vindo do Meu Dia (?compromissoId=X): seleciona/expande o
+  // compromisso correspondente assim que a lista termina de carregar. Como o
+  // Meu Dia só linka compromissos de hoje, a visão "Hoje" (padrão) já basta.
+  useEffect(() => {
+    const idParam = searchParams.get("compromissoId");
+    if (!idParam) return;
+    const id = Number(idParam);
+    if (compromissos.some((c) => c.id === id)) {
+      setSelecionadoId(id);
+    }
+  }, [compromissos, searchParams]);
 
   async function carregarCompromissos() {
     setCarregando(true);
