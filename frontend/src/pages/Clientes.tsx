@@ -1,12 +1,11 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useState } from "react";
 import { AlertTriangle, ChevronDown, FileText, MessageCircle, Plus, Search, Users, X } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Avatar } from "@/components/ui/avatar-inicial";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { ClienteFormDialog, type ClienteFormValues } from "@/components/clientes/ClienteFormDialog";
 import { clientesApi, STATUS_LIST, type Cliente, type Status } from "@/lib/api";
 
 /**
@@ -37,15 +36,6 @@ function linkWhatsapp(telefone: string): string {
   const numero = digitos.length <= 11 ? `55${digitos}` : digitos;
   return `https://wa.me/${numero}`;
 }
-
-type ClienteFormValues = {
-  nome: string;
-  telefone: string;
-  email: string;
-  observacoes: string;
-};
-
-const FORM_VAZIO: ClienteFormValues = { nome: "", telefone: "", email: "", observacoes: "" };
 
 export default function Clientes() {
   const [clientes, setClientes] = useState<Cliente[]>([]);
@@ -269,13 +259,12 @@ export default function Clientes() {
         </div>
       )}
 
-      {formAberto && (
-        <FormularioCliente
-          cliente={clienteEmEdicao}
-          aoFechar={() => { setFormAberto(false); setClienteEmEdicao(null); }}
-          aoSalvar={salvarCliente}
-        />
-      )}
+      <ClienteFormDialog
+        aberto={formAberto}
+        cliente={clienteEmEdicao}
+        aoFechar={() => { setFormAberto(false); setClienteEmEdicao(null); }}
+        aoSalvar={salvarCliente}
+      />
 
       {clienteParaExcluir && (
         <ConfirmarExclusao
@@ -416,106 +405,6 @@ function SecaoObservacoes({ cliente }: { cliente: Cliente }) {
           <p className="text-sm text-muted-foreground">Nenhuma observação cadastrada</p>
         </div>
       )}
-    </div>
-  );
-}
-
-/* ─── Formulário de criação/edição ───────────────────────── */
-function FormularioCliente({
-  cliente,
-  aoFechar,
-  aoSalvar,
-}: {
-  cliente: Cliente | null;
-  aoFechar: () => void;
-  aoSalvar: (valores: ClienteFormValues) => Promise<void>;
-}) {
-  const [valores, setValores] = useState<ClienteFormValues>(
-    cliente
-      ? { nome: cliente.nome, telefone: cliente.telefone, email: cliente.email ?? "", observacoes: cliente.observacoes ?? "" }
-      : FORM_VAZIO,
-  );
-  const [salvando, setSalvando] = useState(false);
-
-  async function aoSubmeter(evento: FormEvent) {
-    evento.preventDefault();
-    setSalvando(true);
-    try {
-      await aoSalvar(valores);
-    } finally {
-      setSalvando(false);
-    }
-  }
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center p-0 sm:items-center sm:p-4">
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={aoFechar} />
-
-      <div className="relative z-10 flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-t-2xl border border-border bg-card sm:rounded-2xl">
-
-        <div className="flex items-center justify-between border-b border-border p-5">
-          <p className="text-base font-semibold text-foreground">{cliente ? "Editar cliente" : "Novo cliente"}</p>
-          <button onClick={aoFechar} className="shrink-0 rounded-lg p-1.5 text-muted-foreground orbis-transition hover:bg-accent hover:text-foreground">
-            <X className="h-4 w-4" strokeWidth={1.75} />
-          </button>
-        </div>
-
-        <form onSubmit={aoSubmeter} className="flex-1 space-y-4 overflow-y-auto p-5">
-          <div className="space-y-1">
-            <Label htmlFor="nome">Nome</Label>
-            <Input
-              id="nome"
-              required
-              minLength={2}
-              maxLength={100}
-              value={valores.nome}
-              onChange={(e) => setValores((v) => ({ ...v, nome: e.target.value }))}
-            />
-          </div>
-
-          <div className="space-y-1">
-            <Label htmlFor="telefone">Telefone</Label>
-            <Input
-              id="telefone"
-              required
-              minLength={8}
-              maxLength={20}
-              value={valores.telefone}
-              onChange={(e) => setValores((v) => ({ ...v, telefone: e.target.value }))}
-            />
-          </div>
-
-          <div className="space-y-1">
-            <Label htmlFor="email">E-mail</Label>
-            <Input
-              id="email"
-              type="email"
-              value={valores.email}
-              onChange={(e) => setValores((v) => ({ ...v, email: e.target.value }))}
-            />
-          </div>
-
-          <div className="space-y-1">
-            <Label htmlFor="observacoes">Observações</Label>
-            <Textarea
-              id="observacoes"
-              maxLength={500}
-              rows={3}
-              value={valores.observacoes}
-              onChange={(e) => setValores((v) => ({ ...v, observacoes: e.target.value }))}
-            />
-          </div>
-
-          <div className="flex gap-2 pt-2">
-            <Button type="submit" className="flex-1" disabled={salvando}>
-              {salvando ? "Salvando…" : "Salvar"}
-            </Button>
-            <Button type="button" variant="outline" className="flex-1" onClick={aoFechar}>
-              Cancelar
-            </Button>
-          </div>
-        </form>
-      </div>
     </div>
   );
 }
