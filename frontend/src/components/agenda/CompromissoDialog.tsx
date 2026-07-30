@@ -4,7 +4,8 @@ import { Dialog, DialogBody, DialogContent, DialogFooter, DialogHeader, DialogTi
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { clientesApi, type Agendamento, type AgendamentoInput, type CategoriaAgendamento, type Cliente } from "@/lib/api";
-import { CATEGORIA_CFG } from "./AgendaItem";
+import { ClienteCombobox } from "./ClienteCombobox";
+import { SeletorCategoria } from "./SeletorCategoria";
 
 /**
  * Modal de criação/edição de compromisso, no mesmo padrão do
@@ -68,6 +69,7 @@ export function CompromissoDialog({
   const [carregandoClientes, setCarregandoClientes] = useState(false);
   const [valores, setValores] = useState<CompromissoFormValues>(() => valoresIniciais(compromisso, [], dataPadrao));
   const [salvando, setSalvando] = useState(false);
+  const [clienteObrigatorio, setClienteObrigatorio] = useState(false);
 
   useEffect(() => {
     if (!aberto) return;
@@ -79,13 +81,19 @@ export function CompromissoDialog({
   }, [aberto]);
 
   useEffect(() => {
-    if (aberto) setValores(valoresIniciais(compromisso, clientes, dataPadrao));
+    if (aberto) {
+      setValores(valoresIniciais(compromisso, clientes, dataPadrao));
+      setClienteObrigatorio(false);
+    }
   }, [aberto, compromisso, clientes, dataPadrao]);
 
   async function aoSubmeter(e: FormEvent) {
     e.preventDefault();
     const clienteEscolhido = clientes.find((c) => c.id === valores.clienteId);
-    if (!clienteEscolhido) return;
+    if (!clienteEscolhido) {
+      setClienteObrigatorio(true);
+      return;
+    }
 
     setSalvando(true);
     try {
@@ -123,23 +131,19 @@ export function CompromissoDialog({
 
             <div className="space-y-1">
               <Label htmlFor="compromisso-cliente">Cliente *</Label>
-              <select
+              <ClienteCombobox
                 id="compromisso-cliente"
-                required
+                clientes={clientes}
+                carregando={carregandoClientes}
                 value={valores.clienteId}
-                onChange={(e) => setValores((v) => ({ ...v, clienteId: Number(e.target.value) }))}
-                disabled={carregandoClientes}
-                className="h-11 w-full rounded-xl border border-border bg-input px-4 text-sm text-foreground outline-none orbis-transition hover:border-border-strong focus:border-ring focus:ring-4 focus:ring-ring/15 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                <option value="" disabled>
-                  {carregandoClientes ? "Carregando clientes…" : "Selecione um cliente"}
-                </option>
-                {clientes.map((c) => (
-                  <option key={c.id} value={c.id}>{c.nome}</option>
-                ))}
-              </select>
-              {!carregandoClientes && clientes.length === 0 && (
-                <p className="text-xs text-muted-foreground">Nenhum cliente cadastrado ainda. Cadastre um cliente primeiro.</p>
+                erro={clienteObrigatorio}
+                onChange={(clienteId) => {
+                  setValores((v) => ({ ...v, clienteId }));
+                  setClienteObrigatorio(false);
+                }}
+              />
+              {clienteObrigatorio && (
+                <p className="text-xs text-destructive">Selecione um cliente para continuar.</p>
               )}
             </div>
 
@@ -166,18 +170,12 @@ export function CompromissoDialog({
               </div>
             </div>
 
-            <div className="space-y-1">
-              <Label htmlFor="compromisso-categoria">Tipo</Label>
-              <select
-                id="compromisso-categoria"
+            <div className="space-y-1.5">
+              <Label>Tipo</Label>
+              <SeletorCategoria
                 value={valores.categoria}
-                onChange={(e) => setValores((v) => ({ ...v, categoria: e.target.value as CategoriaAgendamento }))}
-                className="h-11 w-full rounded-xl border border-border bg-input px-4 text-sm text-foreground outline-none orbis-transition hover:border-border-strong focus:border-ring focus:ring-4 focus:ring-ring/15"
-              >
-                {(Object.keys(CATEGORIA_CFG) as CategoriaAgendamento[]).map((categoria) => (
-                  <option key={categoria} value={categoria}>{CATEGORIA_CFG[categoria].rotulo}</option>
-                ))}
-              </select>
+                onChange={(categoria) => setValores((v) => ({ ...v, categoria }))}
+              />
             </div>
           </DialogBody>
 
