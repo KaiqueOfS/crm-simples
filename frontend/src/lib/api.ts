@@ -125,6 +125,8 @@ export type Cliente = {
   email: string;
   observacoes: string;
   status: Status;
+  createdAt: string;
+  updatedAt: string;
 };
 
 export type Pagina<T> = {

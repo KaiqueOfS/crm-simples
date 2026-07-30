@@ -37,6 +37,11 @@ function linkWhatsapp(telefone: string): string {
   return `https://wa.me/${numero}`;
 }
 
+/** Formata o `createdAt` (já vindo da API) para "Cliente desde 15 de jan. de 2026". */
+function clienteDesde(createdAt: string): string {
+  return new Date(createdAt).toLocaleDateString("pt-BR", { day: "numeric", month: "short", year: "numeric" });
+}
+
 export default function Clientes() {
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [totalClientes, setTotalClientes] = useState(0);
@@ -330,6 +335,7 @@ function DetalheConteudo({
           <p className="text-base font-semibold text-foreground">{cliente.nome}</p>
           <div className="mt-1"><SeloStatusEditavel status={cliente.status} aoMudar={aoMudarStatus} /></div>
           <p className="mt-1.5 text-sm text-muted-foreground">{cliente.telefone}</p>
+          <p className="mt-0.5 text-[11px] text-muted-foreground/60">Cliente desde {clienteDesde(cliente.createdAt)}</p>
         </div>
         <button onClick={aoFechar} className="shrink-0 rounded-lg p-1.5 text-muted-foreground orbis-transition hover:bg-accent hover:text-foreground">
           <X className="h-4 w-4" strokeWidth={1.75} />
