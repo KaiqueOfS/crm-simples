@@ -6,6 +6,7 @@ import { Avatar } from "@/components/ui/avatar-inicial";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ClienteFormDialog, type ClienteFormValues } from "@/components/clientes/ClienteFormDialog";
+import { SecaoProximosCompromissos } from "@/components/clientes/SecaoProximosCompromissos";
 import { clientesApi, STATUS_LIST, type Cliente, type Status } from "@/lib/api";
 
 /**
@@ -351,11 +352,12 @@ function DetalheConteudo({
           </div>
         )}
         <SecaoObservacoes cliente={cliente} />
+        <SecaoProximosCompromissos clienteId={cliente.id} />
         {/*
-          Próximas seções (histórico, próxima ação, arquivos e integração
-          com Agenda/Financeiro) entram aqui como novos blocos, seguindo o
-          mesmo padrão de SecaoObservacoes, assim que o backend passar a
-          suportar esses dados.
+          Próximas seções (histórico, arquivos e integração com Financeiro)
+          entram aqui como novos blocos, seguindo o mesmo padrão de
+          SecaoObservacoes/SecaoProximosCompromissos, assim que o backend
+          passar a suportar esses dados.
         */}
       </div>
 

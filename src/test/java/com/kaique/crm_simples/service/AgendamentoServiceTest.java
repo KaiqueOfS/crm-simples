@@ -182,6 +182,39 @@ class AgendamentoServiceTest {
         verify(repository, never()).save(any(Agendamento.class));
     }
 
+    @Test
+    void listaAgendamentosDeUmClienteDoUsuario() {
+        Cliente cliente = clienteComId(5L, usuarioLogado);
+        when(clienteRepository.findById(5L)).thenReturn(Optional.of(cliente));
+
+        Agendamento agendamento = new Agendamento();
+        agendamento.setTitulo("Troca de óleo");
+        agendamento.setCliente(cliente);
+        agendamento.setUsuario(usuarioLogado);
+        when(repository.findByUsuarioAndClienteOrderByDataAscHoraAsc(usuarioLogado, cliente))
+                .thenReturn(java.util.List.of(agendamento));
+
+        java.util.List<AgendamentoResponse> resposta = service.listarPorCliente(5L);
+
+        assertEquals(1, resposta.size());
+        assertEquals("Troca de óleo", resposta.get(0).titulo());
+    }
+
+    @Test
+    void lancaExcecaoAoListarPorClienteInexistente() {
+        when(clienteRepository.findById(999L)).thenReturn(Optional.empty());
+
+        assertThrows(ClienteNaoEncontradoException.class, () -> service.listarPorCliente(999L));
+    }
+
+    @Test
+    void lancaExcecaoAoListarPorClienteDeOutroUsuario() {
+        Cliente clienteDeOutroUsuario = clienteComId(5L, usuarioComId(2L));
+        when(clienteRepository.findById(5L)).thenReturn(Optional.of(clienteDeOutroUsuario));
+
+        assertThrows(AcessoNegadoException.class, () -> service.listarPorCliente(5L));
+    }
+
     private Usuario usuarioComId(Long id) {
         Usuario usuario = new Usuario();
         ReflectionTestUtils.setField(usuario, "id", id);

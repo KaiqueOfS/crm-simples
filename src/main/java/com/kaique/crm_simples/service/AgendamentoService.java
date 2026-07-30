@@ -78,6 +78,20 @@ public class AgendamentoService {
     }
 
     /**
+     * Lista os agendamentos de um cliente específico do usuário autenticado.
+     * Base para a seção "Próximos compromissos" no painel de detalhes do
+     * cliente (Fase 7.1). Não existe relação inversa Cliente → Agendamento;
+     * a consulta é sempre feita por aqui, a partir do Agendamento.
+     */
+    public List<AgendamentoResponse> listarPorCliente(Long clienteId) {
+        Usuario usuario = usuarioAutenticadoService.obterUsuarioLogado();
+        Cliente cliente = buscarClienteDoUsuario(clienteId, usuario);
+        return repository.findByUsuarioAndClienteOrderByDataAscHoraAsc(usuario, cliente).stream()
+                .map(AgendamentoResponse::de)
+                .toList();
+    }
+
+    /**
      * Cria um novo agendamento para o usuário autenticado.
      *
      * O request não tem campo "usuario" — o dono é sempre o usuário
@@ -131,15 +145,26 @@ public class AgendamentoService {
             return;
         }
 
-        Cliente cliente = clienteRepository.findById(request.getClienteId())
-                .orElseThrow(() -> new ClienteNaoEncontradoException(request.getClienteId()));
+        Cliente cliente = buscarClienteDoUsuario(request.getClienteId(), usuario);
+        agendamento.setCliente(cliente);
+        agendamento.setPessoa(cliente.getNome());
+    }
+
+    /**
+     * Busca um cliente garantindo que pertence ao usuário informado.
+     * Mesma checagem de ClienteService.buscarClienteDoUsuario — reaproveitada
+     * aqui tanto para vincular um cliente a um agendamento quanto para listar
+     * os agendamentos de um cliente.
+     */
+    private Cliente buscarClienteDoUsuario(Long clienteId, Usuario usuario) {
+        Cliente cliente = clienteRepository.findById(clienteId)
+                .orElseThrow(() -> new ClienteNaoEncontradoException(clienteId));
 
         if (!cliente.getUsuario().getId().equals(usuario.getId())) {
             throw new AcessoNegadoException();
         }
 
-        agendamento.setCliente(cliente);
-        agendamento.setPessoa(cliente.getNome());
+        return cliente;
     }
 
     /**

@@ -55,6 +55,15 @@ public class AgendamentoController {
     }
 
     /**
+     * Lista os agendamentos de um cliente específico do usuário autenticado.
+     * Usado pela seção "Próximos compromissos" no painel de detalhes do cliente.
+     */
+    @GetMapping("/cliente/{clienteId}")
+    public List<AgendamentoResponse> listarPorCliente(@PathVariable Long clienteId) {
+        return service.listarPorCliente(clienteId);
+    }
+
+    /**
      * Cria um novo agendamento para o usuário autenticado.
      *
      * @param request dados do agendamento.

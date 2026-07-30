@@ -239,6 +239,9 @@ export const agendamentosApi = {
   list: (data?: string) =>
     api<Agendamento[]>(`/api/agendamentos${data ? `?data=${encodeURIComponent(data)}` : ""}`),
 
+  listarPorCliente: (clienteId: number) =>
+    api<Agendamento[]>(`/api/agendamentos/cliente/${clienteId}`),
+
   create: (agendamento: AgendamentoInput) =>
     api<Agendamento>("/api/agendamentos", {
       method: "POST",
