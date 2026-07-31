@@ -292,4 +292,13 @@
     font-size: var(--font-size-sm);
     font-weight: var(--font-weight-medium);
   }
+
+  .orbis-float {
+    animation: orbis-float 6s ease-in-out infinite;
+  }
+
+  @keyframes orbis-float {
+    0%, 100% { transform: translateY(0); }
+    50%      { transform: translateY(-12px); }
+  }
 }
