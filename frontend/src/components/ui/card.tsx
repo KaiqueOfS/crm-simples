@@ -24,7 +24,7 @@ export const Card = React.forwardRef<
           "rounded-2xl",
           "border border-border",
           "bg-card",
-          "shadow-sm",
+          "shadow-[var(--shadow-sm)]",
           "orbis-transition",
           className
         )}

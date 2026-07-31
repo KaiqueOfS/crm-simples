@@ -48,7 +48,7 @@ export function StatCard({ label, value, sub, color = "default", icon: Icon, onC
       onClick={onClick}
       className={cn(
         "flex flex-col gap-3 rounded-xl border border-border bg-card p-4 text-left orbis-transition",
-        onClick && "cursor-pointer hover:shadow-sm",
+        onClick && "cursor-pointer hover:shadow-[var(--shadow-sm)]",
         className
       )}
     >

@@ -20,7 +20,7 @@ export function PopoverContent({
         className={cn(
           "z-50",
           "w-[var(--radix-popover-trigger-width)]",
-          "overflow-hidden rounded-xl border border-border bg-card shadow-lg",
+          "overflow-hidden rounded-xl border border-border bg-card shadow-[var(--shadow-lg)]",
           "data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95",
           "data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95",
           "outline-none",

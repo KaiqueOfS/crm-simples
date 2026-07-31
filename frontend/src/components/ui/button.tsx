@@ -41,7 +41,7 @@ export function Button({
   const variants = {
 
     primary:
-    "bg-orbis-blue text-white shadow-sm hover:opacity-90 active:opacity-95",
+    "bg-orbis-blue text-white shadow-[var(--shadow-xs)] hover:opacity-90 active:opacity-95",
 
     secondary:
     "bg-surface-2 text-foreground border border-border hover:bg-surface-3",
@@ -53,10 +53,10 @@ export function Button({
       "text-foreground hover:bg-accent",
 
     danger:
-      "bg-orbis-red text-white shadow-sm hover:opacity-90 active:opacity-95",
+      "bg-orbis-red text-white shadow-[var(--shadow-xs)] hover:opacity-90 active:opacity-95",
 
     success:
-      "bg-orbis-green text-white shadow-sm hover:opacity-90 active:opacity-95"
+      "bg-orbis-green text-white shadow-[var(--shadow-xs)] hover:opacity-90 active:opacity-95"
 
   };
 
@@ -80,7 +80,7 @@ export function Button({
     "rounded-xl",
     "font-medium",
     "orbis-transition",
-    "duration-200",
+    "duration-[var(--duration-slow)]",
     "focus:outline-none",
     "focus:ring-4",
     "focus:ring-ring/20",

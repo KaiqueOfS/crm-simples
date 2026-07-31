@@ -13,7 +13,7 @@ export function Toaster(props: ToasterProps) {
       toastOptions={{
         classNames: {
           toast:
-            "!rounded-xl !border !border-border !bg-card !text-foreground !shadow-lg",
+            "!rounded-xl !border !border-border !bg-card !text-foreground !shadow-[var(--shadow-lg)]",
           title: "!text-foreground !font-medium",
           description: "!text-muted-foreground",
           actionButton: "!bg-orbis-blue !text-white",

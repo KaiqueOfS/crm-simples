@@ -51,6 +51,71 @@
   --color-surface-3: var(--surface-3);
 }
 
+/* DESIGN TOKENS — ORBIS DESIGN SYSTEM */
+:root {
+  /* Tipografia */
+  --font-size-xs:   12px;
+  --font-size-sm:   13px;
+  --font-size-base: 15px;
+  --font-size-lg:   17px;
+  --font-size-xl:   20px;
+  --font-size-2xl:  24px;
+  --font-size-3xl:  32px;
+
+  --font-weight-normal:   400;
+  --font-weight-medium:   500;
+  --font-weight-semibold: 600;
+  --font-weight-bold:     700;
+
+  --tracking-tight:  -0.02em;
+  --tracking-normal: 0em;
+  --tracking-wide:   0.02em;
+
+  --line-height-tight:  1.2;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.65;
+
+  /* Espaçamento (escala base 4px) */
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  20px;
+  --space-6:  24px;
+  --space-8:  32px;
+  --space-10: 40px;
+  --space-12: 48px;
+
+  /* Bordas */
+  --border-width-thin:    1px;
+  --border-width-default: 1px;
+  --border-width-thick:   2px;
+
+  /* Animação */
+  --duration-fast: 120ms;
+  --duration-base: 150ms;
+  --duration-slow: 250ms;
+
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-out:      cubic-bezier(0, 0, 0.2, 1);
+  --ease-in:       cubic-bezier(0.4, 0, 1, 1);
+
+  /* Sombras (elevação) — sutis, tom neutro do tema */
+  --shadow-xs: 0 1px 2px 0 oklch(0.12 0.025 264 / 0.04);
+  --shadow-sm: 0 1px 2px 0 oklch(0.12 0.025 264 / 0.05), 0 1px 1px 0 oklch(0.12 0.025 264 / 0.03);
+  --shadow-md: 0 4px 8px -2px oklch(0.12 0.025 264 / 0.06), 0 2px 4px -2px oklch(0.12 0.025 264 / 0.04);
+  --shadow-lg: 0 12px 24px -4px oklch(0.12 0.025 264 / 0.10), 0 4px 8px -4px oklch(0.12 0.025 264 / 0.06);
+  --shadow-xl: 0 24px 48px -8px oklch(0.12 0.025 264 / 0.14), 0 8px 16px -8px oklch(0.12 0.025 264 / 0.08);
+}
+
+.dark {
+  --shadow-xs: 0 1px 2px 0 oklch(0 0 0 / 0.20);
+  --shadow-sm: 0 1px 2px 0 oklch(0 0 0 / 0.28), 0 1px 1px 0 oklch(0 0 0 / 0.18);
+  --shadow-md: 0 4px 8px -2px oklch(0 0 0 / 0.36), 0 2px 4px -2px oklch(0 0 0 / 0.24);
+  --shadow-lg: 0 12px 24px -4px oklch(0 0 0 / 0.46), 0 4px 8px -4px oklch(0 0 0 / 0.32);
+  --shadow-xl: 0 24px 48px -8px oklch(0 0 0 / 0.56), 0 8px 16px -8px oklch(0 0 0 / 0.38);
+}
+
 /* LIGHT MODE */
 :root {
   --radius: 0.625rem;
@@ -198,8 +263,8 @@
 
   .orbis-transition {
     transition-property: color, background-color, border-color, opacity, transform, box-shadow;
-    transition-duration: 150ms;
-    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: var(--duration-base);
+    transition-timing-function: var(--ease-standard);
   }
 
   @theme inline {
@@ -209,22 +274,22 @@
   }
 
   .orbis-title {
-    font-size: 32px;
-    font-weight: 700;
-    letter-spacing: -0.02em;
+    font-size: var(--font-size-3xl);
+    font-weight: var(--font-weight-bold);
+    letter-spacing: var(--tracking-tight);
   }
 
   .orbis-heading {
-    font-size: 20px;
-    font-weight: 600;
+    font-size: var(--font-size-xl);
+    font-weight: var(--font-weight-semibold);
   }
 
   .orbis-body {
-    font-size: 15px;
+    font-size: var(--font-size-base);
   }
 
   .orbis-caption {
-    font-size: 13px;
-    font-weight: 500;
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
   }
 }
