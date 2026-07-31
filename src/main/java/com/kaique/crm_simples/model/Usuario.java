@@ -40,6 +40,11 @@ public class Usuario {
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String senha;
 
+    // Indica se o usuário já concluiu a configuração inicial (Sprint 14).
+    // Usuários cadastrados antes desta sprint começam com false (ver
+    // V5__add_onboarding_usuario.sql) e verão a tela de onboarding.
+    private boolean onboardingConcluido = false;
+
     public Long getId() { return id; }
 
     public String getNome() { return nome; }
@@ -66,4 +71,8 @@ public class Usuario {
      * @param senhaCriptografada senha criptografada.
      */
     public void alterarSenha(String senhaCriptografada) { this.senha = senhaCriptografada; }
+
+    public boolean isOnboardingConcluido() { return onboardingConcluido; }
+
+    public void setOnboardingConcluido(boolean onboardingConcluido) { this.onboardingConcluido = onboardingConcluido; }
 }

@@ -205,6 +205,16 @@ export type Usuario = {
   id: number;
   nome: string;
   email: string;
+  onboardingConcluido: boolean;
+};
+
+export type TipoAtendimento = "NO_ESTABELECIMENTO" | "EXTERNO" | "AMBOS";
+
+export type ConfiguracaoUsuario = {
+  id: number | null;
+  tipoAtendimento: TipoAtendimento | null;
+  segmentoNegocio: string | null;
+  enderecoEstabelecimento: string | null;
 };
 
 export const authApi = {
@@ -314,5 +324,15 @@ export const usuariosApi = {
     api<Usuario>("/api/usuarios/perfil", {
       method: "PUT",
       body: JSON.stringify(dados),
+    }),
+};
+
+export const configuracaoUsuarioApi = {
+  get: () => api<ConfiguracaoUsuario>("/api/configuracao-usuario"),
+
+  salvar: (tipoAtendimento: TipoAtendimento) =>
+    api<ConfiguracaoUsuario>("/api/configuracao-usuario", {
+      method: "POST",
+      body: JSON.stringify({ tipoAtendimento }),
     }),
 };
