@@ -1,9 +1,19 @@
 import { useEffect, useState, type FormEvent } from "react";
+import { Building2, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogBody, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { clientesApi, type Agendamento, type AgendamentoInput, type CategoriaAgendamento, type Cliente } from "@/lib/api";
+import {
+  clientesApi,
+  configuracaoUsuarioApi,
+  type Agendamento,
+  type AgendamentoInput,
+  type CategoriaAgendamento,
+  type Cliente,
+  type LocalAtendimento,
+} from "@/lib/api";
+import { cn } from "@/lib/utils";
 import { formatarHora } from "@/lib/datas";
 import { ClienteCombobox } from "./ClienteCombobox";
 import { SeletorCategoria } from "./SeletorCategoria";
@@ -30,6 +40,7 @@ type CompromissoFormValues = {
   data: string;
   hora: string;
   categoria: CategoriaAgendamento;
+  localAtendimento: LocalAtendimento | null;
 };
 
 function valoresIniciais(compromisso: Agendamento | null, dataPadrao: string): CompromissoFormValues {
@@ -40,9 +51,10 @@ function valoresIniciais(compromisso: Agendamento | null, dataPadrao: string): C
       data: compromisso.data,
       hora: formatarHora(compromisso.hora),
       categoria: compromisso.categoria,
+      localAtendimento: compromisso.localAtendimento,
     };
   }
-  return { titulo: "", clienteId: "", data: dataPadrao, hora: "09:00", categoria: "atendimento" };
+  return { titulo: "", clienteId: "", data: dataPadrao, hora: "09:00", categoria: "atendimento", localAtendimento: null };
 }
 
 export function CompromissoDialog({
@@ -63,6 +75,14 @@ export function CompromissoDialog({
   const [valores, setValores] = useState<CompromissoFormValues>(() => valoresIniciais(compromisso, dataPadrao));
   const [salvando, setSalvando] = useState(false);
   const [clienteObrigatorio, setClienteObrigatorio] = useState(false);
+  const [localObrigatorio, setLocalObrigatorio] = useState(false);
+
+  // Só usuários AMBOS escolhem o local por compromisso — NO_ESTABELECIMENTO/
+  // EXTERNO nem veem a pergunta, o backend resolve sozinho (ver
+  // AgendamentoService.resolverLocalAtendimento). `null` enquanto carrega
+  // ou se a conta ainda não tem configuração salva — nesse caso o seletor
+  // fica oculto e o backend decide (ou exige o valor, se vier ausente).
+  const [mostrarSeletorLocal, setMostrarSeletorLocal] = useState(false);
 
   useEffect(() => {
     if (!aberto) return;
@@ -71,12 +91,18 @@ export function CompromissoDialog({
       .list({ tamanho: 100 })
       .then((resposta) => setClientes(resposta.conteudo))
       .finally(() => setCarregandoClientes(false));
+
+    configuracaoUsuarioApi
+      .get()
+      .then((configuracao) => setMostrarSeletorLocal(configuracao.tipoAtendimento === "AMBOS"))
+      .catch(() => setMostrarSeletorLocal(false));
   }, [aberto]);
 
   useEffect(() => {
     if (aberto) {
       setValores(valoresIniciais(compromisso, dataPadrao));
       setClienteObrigatorio(false);
+      setLocalObrigatorio(false);
     }
   }, [aberto, compromisso, dataPadrao]);
 
@@ -85,6 +111,10 @@ export function CompromissoDialog({
     const clienteEscolhido = clientes.find((c) => c.id === valores.clienteId);
     if (!clienteEscolhido) {
       setClienteObrigatorio(true);
+      return;
+    }
+    if (mostrarSeletorLocal && !valores.localAtendimento) {
+      setLocalObrigatorio(true);
       return;
     }
 
@@ -98,6 +128,7 @@ export function CompromissoDialog({
         hora: valores.hora,
         categoria: valores.categoria,
         lembrete: compromisso?.lembrete ?? 0,
+        localAtendimento: valores.localAtendimento ?? undefined,
       });
     } finally {
       setSalvando(false);
@@ -171,6 +202,46 @@ export function CompromissoDialog({
                 onChange={(categoria) => setValores((v) => ({ ...v, categoria }))}
               />
             </div>
+
+            {mostrarSeletorLocal && (
+              <div className="space-y-1.5">
+                <Label>Local de atendimento *</Label>
+                <div role="radiogroup" aria-label="Local de atendimento" className="flex flex-wrap gap-2">
+                  {(
+                    [
+                      { valor: "ESTABELECIMENTO" as LocalAtendimento, icone: Building2, rotulo: "Meu estabelecimento" },
+                      { valor: "EXTERNO" as LocalAtendimento, icone: MapPin, rotulo: "Atendimento externo" },
+                    ]
+                  ).map(({ valor, icone: Icone, rotulo }) => {
+                    const selecionado = valores.localAtendimento === valor;
+                    return (
+                      <button
+                        key={valor}
+                        type="button"
+                        role="radio"
+                        aria-checked={selecionado}
+                        onClick={() => {
+                          setValores((v) => ({ ...v, localAtendimento: valor }));
+                          setLocalObrigatorio(false);
+                        }}
+                        className={cn(
+                          "flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium orbis-transition",
+                          selecionado
+                            ? "border-transparent bg-orbis-blue-tint text-orbis-blue"
+                            : "border-border bg-card text-muted-foreground hover:bg-accent hover:text-foreground",
+                        )}
+                      >
+                        <Icone className="h-3.5 w-3.5" strokeWidth={1.75} />
+                        {rotulo}
+                      </button>
+                    );
+                  })}
+                </div>
+                {localObrigatorio && (
+                  <p className="text-xs text-destructive">Selecione onde este atendimento vai acontecer.</p>
+                )}
+              </div>
+            )}
           </DialogBody>
 
           <DialogFooter>

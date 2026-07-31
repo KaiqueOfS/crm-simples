@@ -8,7 +8,9 @@ import com.kaique.crm_simples.exception.ClienteNaoEncontradoException;
 import com.kaique.crm_simples.model.Agendamento;
 import com.kaique.crm_simples.model.Cliente;
 import com.kaique.crm_simples.model.Usuario;
+import com.kaique.crm_simples.model.enums.LocalAtendimento;
 import com.kaique.crm_simples.model.enums.StatusAgendamento;
+import com.kaique.crm_simples.model.enums.TipoAtendimento;
 import com.kaique.crm_simples.repository.AgendamentoRepository;
 import com.kaique.crm_simples.repository.ClienteRepository;
 import org.slf4j.Logger;
@@ -35,14 +37,17 @@ public class AgendamentoService {
     private final AgendamentoRepository repository;
     private final ClienteRepository clienteRepository;
     private final UsuarioAutenticadoService usuarioAutenticadoService;
+    private final ConfiguracaoUsuarioService configuracaoUsuarioService;
 
     public AgendamentoService(
             AgendamentoRepository repository,
             ClienteRepository clienteRepository,
-            UsuarioAutenticadoService usuarioAutenticadoService) {
+            UsuarioAutenticadoService usuarioAutenticadoService,
+            ConfiguracaoUsuarioService configuracaoUsuarioService) {
         this.repository = repository;
         this.clienteRepository = clienteRepository;
         this.usuarioAutenticadoService = usuarioAutenticadoService;
+        this.configuracaoUsuarioService = configuracaoUsuarioService;
     }
 
     /**
@@ -125,6 +130,7 @@ public class AgendamentoService {
         agendamento.setCategoria(request.getCategoria());
         agendamento.setLembrete(request.getLembrete());
         agendamento.setStatus(request.getStatus() != null ? request.getStatus() : StatusAgendamento.PENDENTE);
+        agendamento.setLocalAtendimento(resolverLocalAtendimento(usuario, request.getLocalAtendimento()));
         agendamento.setUsuario(usuario);
         aplicarCliente(agendamento, request, usuario);
 
@@ -149,6 +155,12 @@ public class AgendamentoService {
         if (request.getStatus() != null) {
             agendamento.setStatus(request.getStatus());
         }
+        // Mesmo padrão do status: ausente mantém o local atual. A regra de
+        // preenchimento automático/obrigatoriedade (resolverLocalAtendimento)
+        // só se aplica na criação — editar não deve exigir escolher de novo.
+        if (request.getLocalAtendimento() != null) {
+            agendamento.setLocalAtendimento(request.getLocalAtendimento());
+        }
         aplicarCliente(agendamento, request, agendamento.getUsuario());
         return AgendamentoResponse.de(repository.save(agendamento));
     }
@@ -161,6 +173,32 @@ public class AgendamentoService {
         Agendamento agendamento = buscarDoUsuario(id);
         agendamento.setStatus(StatusAgendamento.CONCLUIDO);
         return AgendamentoResponse.de(repository.save(agendamento));
+    }
+
+    /**
+     * Resolve o local de atendimento de um novo agendamento a partir da
+     * configuração do usuário (Sprint 15.1).
+     *
+     * NO_ESTABELECIMENTO/EXTERNO: a conta só atende de um jeito — o valor é
+     * sempre o mesmo, o que vier do request é ignorado (o frontend nem
+     * mostra a escolha nesse caso). AMBOS (ou configuração ainda ausente):
+     * exige que o request informe o local, senão é erro de validação.
+     */
+    private LocalAtendimento resolverLocalAtendimento(Usuario usuario, LocalAtendimento informado) {
+        TipoAtendimento tipoAtendimento = configuracaoUsuarioService.obterTipoAtendimento(usuario);
+
+        if (tipoAtendimento == TipoAtendimento.NO_ESTABELECIMENTO) {
+            return LocalAtendimento.ESTABELECIMENTO;
+        }
+        if (tipoAtendimento == TipoAtendimento.EXTERNO) {
+            return LocalAtendimento.EXTERNO;
+        }
+
+        // AMBOS, ou usuário sem configuração salva ainda: precisa vir do request.
+        if (informado == null) {
+            throw new RuntimeException("Selecione o local de atendimento.");
+        }
+        return informado;
     }
 
     /**

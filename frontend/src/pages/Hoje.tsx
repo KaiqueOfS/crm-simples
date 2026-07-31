@@ -5,7 +5,7 @@ import { AlertTriangle, Calendar, CalendarClock, CalendarDays, CheckCircle2, Fil
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { StatCard } from "@/components/ui/stat-card";
-import { CATEGORIA_CFG, STATUS_AGENDAMENTO_CFG } from "@/components/agenda/AgendaItem";
+import { CATEGORIA_CFG, LocalAtendimentoBadge, STATUS_AGENDAMENTO_CFG } from "@/components/agenda/AgendaItem";
 import { CompromissoDialog } from "@/components/agenda/CompromissoDialog";
 import { HOJE_CHAVE, dataPorExtenso, formatarHora } from "@/lib/datas";
 import { agendamentosApi, clientesApi, type AgendamentoInput } from "@/lib/api";
@@ -178,6 +178,7 @@ export default function Hoje() {
                   <span className={cn("rounded-full px-2 py-0.5 text-[10px] font-medium", STATUS_AGENDAMENTO_CFG[proximo.status].selo)}>
                     {STATUS_AGENDAMENTO_CFG[proximo.status].rotulo}
                   </span>
+                  <LocalAtendimentoBadge localAtendimento={proximo.localAtendimento} />
                 </div>
               </div>
 
@@ -236,9 +237,12 @@ export default function Hoje() {
                       <p className="truncate text-sm font-medium text-foreground">{item.titulo}</p>
                       <p className="truncate text-[11px] text-muted-foreground">{item.pessoa}</p>
                     </div>
-                    <span className={cn("shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium", STATUS_AGENDAMENTO_CFG[item.status].selo)}>
-                      {STATUS_AGENDAMENTO_CFG[item.status].rotulo}
-                    </span>
+                    <div className="flex shrink-0 items-center gap-1">
+                      <LocalAtendimentoBadge localAtendimento={item.localAtendimento} />
+                      <span className={cn("rounded-full px-2 py-0.5 text-[10px] font-medium", STATUS_AGENDAMENTO_CFG[item.status].selo)}>
+                        {STATUS_AGENDAMENTO_CFG[item.status].rotulo}
+                      </span>
+                    </div>
                   </div>
                 ))}
               </div>

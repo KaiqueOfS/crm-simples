@@ -1,6 +1,7 @@
 package com.kaique.crm_simples.dto;
 
 import com.kaique.crm_simples.model.Agendamento;
+import com.kaique.crm_simples.model.enums.LocalAtendimento;
 import com.kaique.crm_simples.model.enums.StatusAgendamento;
 
 import java.time.LocalDate;
@@ -32,6 +33,7 @@ public record AgendamentoResponse(
         String categoria,
         Integer lembrete,
         StatusAgendamento status,
+        LocalAtendimento localAtendimento,
         LocalDateTime createdAt,
         LocalDateTime updatedAt) {
 
@@ -46,6 +48,7 @@ public record AgendamentoResponse(
                 agendamento.getCategoria(),
                 agendamento.getLembrete(),
                 agendamento.getStatus(),
+                agendamento.getLocalAtendimento(),
                 agendamento.getCreatedAt(),
                 agendamento.getUpdatedAt());
     }

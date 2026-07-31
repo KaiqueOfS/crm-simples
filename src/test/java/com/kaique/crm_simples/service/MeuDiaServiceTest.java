@@ -90,6 +90,6 @@ class MeuDiaServiceTest {
     private static AgendamentoResponse agendamento(Long id, LocalTime hora, StatusAgendamento status) {
         return new AgendamentoResponse(
                 id, "Compromisso " + id, "Cliente " + id, id, HOJE, hora,
-                "atendimento", 0, status, null, null);
+                "atendimento", 0, status, null, null, null);
     }
 }

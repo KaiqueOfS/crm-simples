@@ -1,9 +1,9 @@
 import { useState, type MouseEvent } from "react";
-import { MessageCircle } from "lucide-react";
+import { Building2, MapPin, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { clientesApi, type Agendamento, type CategoriaAgendamento, type StatusAgendamento } from "@/lib/api";
+import { clientesApi, type Agendamento, type CategoriaAgendamento, type LocalAtendimento, type StatusAgendamento } from "@/lib/api";
 import { linkWhatsapp } from "@/lib/utils/whatsapp";
 import { formatarHora } from "@/lib/datas";
 
@@ -27,6 +27,44 @@ export const STATUS_AGENDAMENTO_CFG: Record<StatusAgendamento, { rotulo: string;
   CONCLUIDO: { rotulo: "Concluído",  selo: "bg-orbis-green-tint text-orbis-green" },
   CANCELADO: { rotulo: "Cancelado", selo: "bg-orbis-red-tint text-orbis-red"     },
 };
+
+/**
+ * Configuração visual por local de atendimento (Sprint 15.2). Ícone é o
+ * diferenciador principal — cor neutra de propósito, para não competir com
+ * os selos de categoria/status que já carregam significado por cor.
+ */
+export const LOCAL_ATENDIMENTO_CFG: Record<LocalAtendimento, { rotulo: string; icone: typeof Building2 }> = {
+  ESTABELECIMENTO: { rotulo: "Estabelecimento", icone: Building2 },
+  EXTERNO:         { rotulo: "Externo",         icone: MapPin    },
+};
+
+/**
+ * Badge compacto do local de atendimento. Não renderiza nada quando
+ * `localAtendimento` é `null` (agendamentos criados antes da Sprint 15.1,
+ * que não tinham esse campo) — sem placeholder, sem erro.
+ */
+export function LocalAtendimentoBadge({
+  localAtendimento,
+  className,
+}: {
+  localAtendimento: LocalAtendimento | null;
+  className?: string;
+}) {
+  if (!localAtendimento) return null;
+  const cfg = LOCAL_ATENDIMENTO_CFG[localAtendimento];
+  const Icone = cfg.icone;
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-1 rounded-full border border-border bg-surface-1 px-2 py-0.5 text-[10px] font-medium text-muted-foreground",
+        className,
+      )}
+    >
+      <Icone className="h-3 w-3" strokeWidth={1.75} />
+      {cfg.rotulo}
+    </span>
+  );
+}
 
 /** Cartão de um compromisso na agenda: horário, título, cliente, tipo e status. */
 export function AgendaItem({
@@ -83,13 +121,14 @@ export function AgendaItem({
             <p className="truncate text-sm font-medium text-foreground">{compromisso.titulo}</p>
             {compromisso.pessoa && <p className="truncate text-xs text-muted-foreground">{compromisso.pessoa}</p>}
           </div>
-          <div className="flex shrink-0 items-center gap-1">
+          <div className="flex shrink-0 flex-wrap items-center justify-end gap-1">
             <span className={cn("rounded-full px-2 py-0.5 text-[10px] font-medium", cfg.selo)}>
               {cfg.rotulo}
             </span>
             <span className={cn("rounded-full px-2 py-0.5 text-[10px] font-medium", statusCfg.selo)}>
               {statusCfg.rotulo}
             </span>
+            <LocalAtendimentoBadge localAtendimento={compromisso.localAtendimento} />
           </div>
         </div>
 
@@ -104,6 +143,12 @@ export function AgendaItem({
                 <p className="text-muted-foreground">Horário</p>
                 <p className="font-medium text-foreground">{formatarHora(compromisso.hora)}</p>
               </div>
+              {compromisso.localAtendimento && (
+                <div>
+                  <p className="text-muted-foreground">Local</p>
+                  <p className="font-medium text-foreground">{LOCAL_ATENDIMENTO_CFG[compromisso.localAtendimento].rotulo}</p>
+                </div>
+              )}
               {compromisso.pessoa && (
                 <div>
                   <p className="text-muted-foreground">Cliente</p>

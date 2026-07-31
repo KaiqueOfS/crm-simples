@@ -165,6 +165,11 @@ export type CategoriaAgendamento =
 
 export type StatusAgendamento = "PENDENTE" | "CONCLUIDO" | "CANCELADO";
 
+// Onde este compromisso específico acontece (Sprint 15.1) — distinto de
+// TipoAtendimento (capacidade da conta, ver ConfiguracaoUsuario). Vem null
+// só em agendamentos criados antes desta sprint (V7 é nullable, sem backfill).
+export type LocalAtendimento = "ESTABELECIMENTO" | "EXTERNO";
+
 export type Agendamento = {
   id: number;
   titulo: string;
@@ -175,12 +180,20 @@ export type Agendamento = {
   categoria: CategoriaAgendamento;
   lembrete: number;
   status: StatusAgendamento;
+  localAtendimento: LocalAtendimento | null;
 };
 
 // "status" é opcional aqui: ausente na criação o backend usa PENDENTE, ausente
 // na atualização ele mantém o status atual (ver AgendamentoService.java) — só
 // o endpoint /concluir muda status de propósito.
-export type AgendamentoInput = Omit<Agendamento, "id" | "status"> & { status?: StatusAgendamento };
+// "localAtendimento" também é opcional: obrigatório apenas quando a conta é
+// AMBOS (o backend valida — ver AgendamentoService.resolverLocalAtendimento);
+// para NO_ESTABELECIMENTO/EXTERNO o backend preenche sozinho e ignora o que
+// vier aqui.
+export type AgendamentoInput = Omit<Agendamento, "id" | "status" | "localAtendimento"> & {
+  status?: StatusAgendamento;
+  localAtendimento?: LocalAtendimento;
+};
 
 // "disponivel" sempre false por enquanto — Financeiro e Orçamentos ainda não
 // existem como módulos; o backend já responde nesse formato para o dia em

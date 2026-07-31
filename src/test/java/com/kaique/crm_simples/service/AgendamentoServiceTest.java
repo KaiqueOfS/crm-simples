@@ -8,7 +8,9 @@ import com.kaique.crm_simples.exception.ClienteNaoEncontradoException;
 import com.kaique.crm_simples.model.Agendamento;
 import com.kaique.crm_simples.model.Cliente;
 import com.kaique.crm_simples.model.Usuario;
+import com.kaique.crm_simples.model.enums.LocalAtendimento;
 import com.kaique.crm_simples.model.enums.StatusAgendamento;
+import com.kaique.crm_simples.model.enums.TipoAtendimento;
 import com.kaique.crm_simples.repository.AgendamentoRepository;
 import com.kaique.crm_simples.repository.ClienteRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -28,6 +30,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -49,14 +52,21 @@ class AgendamentoServiceTest {
     @Mock
     private UsuarioAutenticadoService usuarioAutenticadoService;
 
+    @Mock
+    private ConfiguracaoUsuarioService configuracaoUsuarioService;
+
     private AgendamentoService service;
     private Usuario usuarioLogado;
 
     @BeforeEach
     void setUp() {
-        service = new AgendamentoService(repository, clienteRepository, usuarioAutenticadoService);
+        service = new AgendamentoService(repository, clienteRepository, usuarioAutenticadoService, configuracaoUsuarioService);
         usuarioLogado = usuarioComId(1L);
         when(usuarioAutenticadoService.obterUsuarioLogado()).thenReturn(usuarioLogado);
+        // Default para os testes que não são sobre local de atendimento: conta
+        // NO_ESTABELECIMENTO resolve sozinha, sem exigir nada do request.
+        // lenient() porque nem todo teste chama salvar() (ex.: os de deletar/concluir).
+        lenient().when(configuracaoUsuarioService.obterTipoAtendimento(any())).thenReturn(TipoAtendimento.NO_ESTABELECIMENTO);
     }
 
     @Test
@@ -301,6 +311,70 @@ class AgendamentoServiceTest {
 
         assertThrows(AcessoNegadoException.class, () -> service.concluir(10L));
 
+        verify(repository, never()).save(any(Agendamento.class));
+    }
+
+    @Test
+    void preencheEstabelecimentoAutomaticamenteQuandoContaENoEstabelecimento() {
+        when(configuracaoUsuarioService.obterTipoAtendimento(usuarioLogado)).thenReturn(TipoAtendimento.NO_ESTABELECIMENTO);
+
+        AgendamentoRequest request = new AgendamentoRequest();
+        request.setTitulo("Corte de cabelo");
+        request.setData(LocalDate.now());
+        request.setHora(LocalTime.of(9, 0));
+        // Não informa localAtendimento — e mesmo que informasse EXTERNO, a
+        // conta NO_ESTABELECIMENTO sempre prevalece (ver resolverLocalAtendimento).
+
+        when(repository.save(any(Agendamento.class))).thenAnswer(invocacao -> invocacao.getArgument(0));
+
+        AgendamentoResponse resposta = service.salvar(request);
+
+        assertEquals(LocalAtendimento.ESTABELECIMENTO, resposta.localAtendimento());
+    }
+
+    @Test
+    void preencheExternoAutomaticamenteQuandoContaEExterno() {
+        when(configuracaoUsuarioService.obterTipoAtendimento(usuarioLogado)).thenReturn(TipoAtendimento.EXTERNO);
+
+        AgendamentoRequest request = new AgendamentoRequest();
+        request.setTitulo("Instalação elétrica");
+        request.setData(LocalDate.now());
+        request.setHora(LocalTime.of(9, 0));
+
+        when(repository.save(any(Agendamento.class))).thenAnswer(invocacao -> invocacao.getArgument(0));
+
+        AgendamentoResponse resposta = service.salvar(request);
+
+        assertEquals(LocalAtendimento.EXTERNO, resposta.localAtendimento());
+    }
+
+    @Test
+    void usaLocalInformadoQuandoContaEAmbos() {
+        when(configuracaoUsuarioService.obterTipoAtendimento(usuarioLogado)).thenReturn(TipoAtendimento.AMBOS);
+
+        AgendamentoRequest request = new AgendamentoRequest();
+        request.setTitulo("Visita técnica");
+        request.setData(LocalDate.now());
+        request.setHora(LocalTime.of(9, 0));
+        request.setLocalAtendimento(LocalAtendimento.EXTERNO);
+
+        when(repository.save(any(Agendamento.class))).thenAnswer(invocacao -> invocacao.getArgument(0));
+
+        AgendamentoResponse resposta = service.salvar(request);
+
+        assertEquals(LocalAtendimento.EXTERNO, resposta.localAtendimento());
+    }
+
+    @Test
+    void lancaExcecaoQuandoContaEAmbosSemLocalInformado() {
+        when(configuracaoUsuarioService.obterTipoAtendimento(usuarioLogado)).thenReturn(TipoAtendimento.AMBOS);
+
+        AgendamentoRequest request = new AgendamentoRequest();
+        request.setTitulo("Visita técnica");
+        request.setData(LocalDate.now());
+        request.setHora(LocalTime.of(9, 0));
+
+        assertThrows(RuntimeException.class, () -> service.salvar(request));
         verify(repository, never()).save(any(Agendamento.class));
     }
 

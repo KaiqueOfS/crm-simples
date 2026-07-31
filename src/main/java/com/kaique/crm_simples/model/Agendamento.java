@@ -1,6 +1,7 @@
 package com.kaique.crm_simples.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.kaique.crm_simples.model.enums.LocalAtendimento;
 import com.kaique.crm_simples.model.enums.StatusAgendamento;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
@@ -66,6 +67,12 @@ public class Agendamento {
     @Enumerated(EnumType.STRING)
     private StatusAgendamento status = StatusAgendamento.PENDENTE;
 
+    // Onde este compromisso específico acontece (Sprint 15.1). Sem valor
+    // padrão em memória — quem decide o valor é o AgendamentoService, a
+    // partir de ConfiguracaoUsuario.tipoAtendimento (ver V7__add_local_atendimento_agendamento.sql).
+    @Enumerated(EnumType.STRING)
+    private LocalAtendimento localAtendimento;
+
     // Usuário dono do agendamento
     @ManyToOne
     @JoinColumn(name = "usuario_id")
@@ -109,6 +116,9 @@ public class Agendamento {
 
     public StatusAgendamento getStatus() { return status; }
     public void setStatus(StatusAgendamento status) { this.status = status; }
+
+    public LocalAtendimento getLocalAtendimento() { return localAtendimento; }
+    public void setLocalAtendimento(LocalAtendimento localAtendimento) { this.localAtendimento = localAtendimento; }
 
     public Usuario getUsuario() { return usuario; }
     public void setUsuario(Usuario usuario) { this.usuario = usuario; }

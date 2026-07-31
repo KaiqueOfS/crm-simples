@@ -4,6 +4,7 @@ import com.kaique.crm_simples.dto.ConfiguracaoUsuarioRequest;
 import com.kaique.crm_simples.dto.ConfiguracaoUsuarioResponse;
 import com.kaique.crm_simples.model.ConfiguracaoUsuario;
 import com.kaique.crm_simples.model.Usuario;
+import com.kaique.crm_simples.model.enums.TipoAtendimento;
 import com.kaique.crm_simples.repository.ConfiguracaoUsuarioRepository;
 import com.kaique.crm_simples.repository.UsuarioRepository;
 import org.slf4j.Logger;
@@ -45,6 +46,17 @@ public class ConfiguracaoUsuarioService {
         return repository.findByUsuario(usuario)
                 .map(ConfiguracaoUsuarioResponse::de)
                 .orElseGet(ConfiguracaoUsuarioResponse::vazia);
+    }
+
+    /**
+     * Tipo de atendimento configurado pelo usuário (Sprint 15.1) — usado
+     * pelo AgendamentoService para decidir o local de cada compromisso.
+     * Retorna null quando o usuário ainda não tem configuração salva.
+     */
+    public TipoAtendimento obterTipoAtendimento(Usuario usuario) {
+        return repository.findByUsuario(usuario)
+                .map(ConfiguracaoUsuario::getTipoAtendimento)
+                .orElse(null);
     }
 
     /**

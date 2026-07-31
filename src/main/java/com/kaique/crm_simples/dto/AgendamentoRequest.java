@@ -1,5 +1,6 @@
 package com.kaique.crm_simples.dto;
 
+import com.kaique.crm_simples.model.enums.LocalAtendimento;
 import com.kaique.crm_simples.model.enums.StatusAgendamento;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -40,6 +41,12 @@ public class AgendamentoRequest {
     // ausente mantém o status atual do agendamento (não reseta para PENDENTE).
     private StatusAgendamento status;
 
+    // Só é obrigatório quando a configuração do usuário é AMBOS — validado
+    // no AgendamentoService (depende do usuário autenticado, não pode ser
+    // expresso com @NotNull aqui). Para NO_ESTABELECIMENTO/EXTERNO, o
+    // service ignora o que vier aqui e preenche automaticamente.
+    private LocalAtendimento localAtendimento;
+
     public String getTitulo() { return titulo; }
     public void setTitulo(String titulo) { this.titulo = titulo; }
 
@@ -63,4 +70,7 @@ public class AgendamentoRequest {
 
     public StatusAgendamento getStatus() { return status; }
     public void setStatus(StatusAgendamento status) { this.status = status; }
+
+    public LocalAtendimento getLocalAtendimento() { return localAtendimento; }
+    public void setLocalAtendimento(LocalAtendimento localAtendimento) { this.localAtendimento = localAtendimento; }
 }
