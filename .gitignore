@@ -1,3 +1,4 @@
+### Build ###
 HELP.md
 target/
 .mvn/wrapper/maven-wrapper.jar
@@ -42,10 +43,10 @@ build/
 .env.local
 **/.env.local
 
-# Ferramentas locais
+# Ferramentas de agente/skill locais (não fazem parte do produto)
 .agents/
 .codex/
-.idea/
+.impeccable/
 
 # Dependências
 frontend/node_modules/
