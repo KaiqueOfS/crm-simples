@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 /**
@@ -24,6 +25,7 @@ public class Usuario {
     // Nome do usuário (obrigatório, entre 2 e 100 caracteres)
     @NotBlank(message = "Nome é obrigatório")
     @Size(min = 2, max = 100, message = "Nome deve ter entre 2 e 100 caracteres")
+    @Pattern(regexp = "^[\\p{L}\\s'-]+$", message = "Nome deve conter apenas letras")
     private String nome;
 
     // E-mail utilizado para autenticação (obrigatório e único)

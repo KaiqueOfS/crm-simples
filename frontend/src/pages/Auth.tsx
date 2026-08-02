@@ -5,11 +5,37 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { OrbisLogo } from "@/components/ui/orbis-logo";
-import { cn } from "@/lib/utils";
+import { bloquearTeclaInvalidaNome, cn, filtrarNome } from "@/lib/utils";
 import { Mail, Lock, User, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 
 type Modo = "login" | "cadastro";
+
+// Mesma regra do backend (CadastroUsuarioRequest): mínimo de 8 caracteres,
+// com pelo menos 1 letra e 1 número.
+const SENHA_VALIDA = /^(?=.*[A-Za-z])(?=.*\d).{8,}$/;
+
+// Mesma regra do backend (UsuarioService.validarNome), na mesma ordem:
+// caracteres inválidos → nome incompleto.
+const NOME_CARACTERES_VALIDOS = /^[\p{L}\s'-]+$/u;
+const NOME_COMPLETO = /^[\p{L}'-]+(?:\s[\p{L}'-]+)+$/u;
+
+type Forca = "fraca" | "média" | "forte";
+
+function forcaSenha(senha: string): Forca | null {
+  if (!senha) return null;
+
+  let pontos = 0;
+  if (senha.length >= 8) pontos++;
+  if (senha.length >= 12) pontos++;
+  if (/[a-z]/.test(senha) && /[A-Z]/.test(senha)) pontos++;
+  if (/\d/.test(senha)) pontos++;
+  if (/[^A-Za-z0-9]/.test(senha)) pontos++;
+
+  if (pontos <= 1) return "fraca";
+  if (pontos <= 3) return "média";
+  return "forte";
+}
 
 export default function Auth() {
   const navigate = useNavigate();
@@ -26,8 +52,12 @@ export default function Auth() {
   const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
+  const [confirmarSenha, setConfirmarSenha] = useState("");
   const [ocupado, setOcupado] = useState(false);
   const [mostrarSenha, setMostrarSenha] = useState(false);
+  const [mostrarConfirmarSenha, setMostrarConfirmarSenha] = useState(false);
+
+  const forca = modo === "cadastro" ? forcaSenha(senha) : null;
 
   useEffect(() => {
     if (getToken()) navigate("/hoje", { replace: true });
@@ -42,16 +72,41 @@ export default function Auth() {
         setToken(token);
         navigate("/hoje", { replace: true });
       } else {
-        if (senha.length < 6) {
-          toast.error("A senha deve ter no mínimo 6 caracteres.");
+        // Remove espaços nas extremidades e colapsa espaços duplos —
+        // evita nomes como "   Maria   Silva   " indo pro banco.
+        const nomeNormalizado = nome.trim().replace(/\s+/g, " ");
+        const emailNormalizado = email.trim().toLowerCase();
+
+        if (!nomeNormalizado) {
+          toast.error("Informe seu nome.");
           return;
         }
 
-        await authApi.cadastrar(nome, email, senha);
+        if (!NOME_CARACTERES_VALIDOS.test(nomeNormalizado)) {
+          toast.error("O nome deve conter apenas letras.");
+          return;
+        }
+
+        if (!NOME_COMPLETO.test(nomeNormalizado)) {
+          toast.error("Informe seu nome completo (nome e sobrenome).");
+          return;
+        }
+
+        if (!SENHA_VALIDA.test(senha)) {
+          toast.error("A senha deve ter no mínimo 8 caracteres, incluindo letras e números.");
+          return;
+        }
+
+        if (senha !== confirmarSenha) {
+          toast.error("As senhas não coincidem.");
+          return;
+        }
+
+        await authApi.cadastrar(nomeNormalizado, emailNormalizado, senha, confirmarSenha);
 
         // Após cadastrar, autentica automaticamente para não obrigar
         // o usuário a digitar tudo de novo na tela de login.
-        const { token } = await authApi.login(email, senha);
+        const { token } = await authApi.login(emailNormalizado, senha);
         setToken(token);
         toast.success("Conta criada com sucesso!");
         navigate("/hoje", { replace: true });
@@ -149,10 +204,12 @@ export default function Auth() {
                 <Input
                   id="nome"
                   required
-                  minLength={2}
+                  maxLength={100}
                   value={nome}
-                  onChange={(e) => setNome(e.target.value)}
+                  onChange={(e) => setNome(filtrarNome(e.target.value))}
+                  onKeyDown={bloquearTeclaInvalidaNome}
                   placeholder="Digite seu nome"
+                  autoComplete="name"
                   className="h-12 rounded-full pl-11"
                 />
               </div>
@@ -170,6 +227,8 @@ export default function Auth() {
                 id="email"
                 type="email"
                 required
+                maxLength={255}
+                autoComplete="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="Digite seu e-mail"
@@ -189,7 +248,8 @@ export default function Auth() {
                 id="senha"
                 type={mostrarSenha ? "text" : "password"}
                 required
-                minLength={6}
+                minLength={modo === "cadastro" ? 8 : 6}
+                autoComplete={modo === "login" ? "current-password" : "new-password"}
                 value={senha}
                 onChange={(e) => setSenha(e.target.value)}
                 placeholder="Digite sua senha"
@@ -208,7 +268,72 @@ export default function Auth() {
                 )}
               </button>
             </div>
+            {forca && (
+              <div className="flex items-center gap-2 px-1">
+                <div className="flex h-1 flex-1 gap-1">
+                  {(["fraca", "média", "forte"] as const).map((nivel, i) => {
+                    const atingiu =
+                      (forca === "fraca" && i === 0) ||
+                      (forca === "média" && i <= 1) ||
+                      (forca === "forte" && i <= 2);
+                    return (
+                      <span
+                        key={nivel}
+                        className="h-full flex-1 rounded-full orbis-transition"
+                        style={{
+                          backgroundColor: atingiu
+                            ? forca === "fraca"
+                              ? "var(--orbis-red)"
+                              : forca === "média"
+                                ? "var(--orbis-amber)"
+                                : "var(--orbis-green)"
+                            : "var(--border)",
+                        }}
+                      />
+                    );
+                  })}
+                </div>
+                <span className="text-muted-foreground" style={{ fontSize: "var(--font-size-xs)" }}>
+                  Senha {forca}
+                </span>
+              </div>
+            )}
           </div>
+
+          {modo === "cadastro" && (
+            <div className="space-y-1.5">
+              <Label htmlFor="confirmar-senha">Confirmar senha</Label>
+              <div className="relative">
+                <Lock
+                  className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+                  strokeWidth={1.75}
+                />
+                <Input
+                  id="confirmar-senha"
+                  type={mostrarConfirmarSenha ? "text" : "password"}
+                  required
+                  minLength={8}
+                  autoComplete="new-password"
+                  value={confirmarSenha}
+                  onChange={(e) => setConfirmarSenha(e.target.value)}
+                  placeholder="Digite a senha novamente"
+                  className="h-12 rounded-full pl-11 pr-11"
+                />
+                <button
+                  type="button"
+                  onClick={() => setMostrarConfirmarSenha((v) => !v)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground orbis-transition hover:text-foreground"
+                  aria-label={mostrarConfirmarSenha ? "Ocultar senha" : "Mostrar senha"}
+                >
+                  {mostrarConfirmarSenha ? (
+                    <EyeOff className="h-4 w-4" strokeWidth={1.75} />
+                  ) : (
+                    <Eye className="h-4 w-4" strokeWidth={1.75} />
+                  )}
+                </button>
+              </div>
+            </div>
+          )}
 
           {modo === "login" && (
             <div className="flex justify-end">

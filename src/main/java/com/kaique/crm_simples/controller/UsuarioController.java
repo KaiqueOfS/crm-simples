@@ -1,8 +1,8 @@
 package com.kaique.crm_simples.controller;
 
 import com.kaique.crm_simples.dto.AtualizarPerfilRequest;
+import com.kaique.crm_simples.dto.CadastroUsuarioRequest;
 import com.kaique.crm_simples.dto.UsuarioResponse;
-import com.kaique.crm_simples.model.Usuario;
 import com.kaique.crm_simples.service.UsuarioService;
 import jakarta.validation.Valid;
 import org.springframework.security.core.Authentication;
@@ -30,12 +30,12 @@ public class UsuarioController {
      *
      * Rota pública — não precisa de token JWT.
      *
-     * @param usuario dados recebidos na requisição.
+     * @param request dados recebidos na requisição.
      * @return dados públicos do usuário salvo (nunca a senha).
      */
     @PostMapping
-    public UsuarioResponse cadastrar(@Valid @RequestBody Usuario usuario) {
-        return UsuarioResponse.de(service.salvar(usuario));
+    public UsuarioResponse cadastrar(@Valid @RequestBody CadastroUsuarioRequest request) {
+        return UsuarioResponse.de(service.cadastrar(request));
     }
 
     /**

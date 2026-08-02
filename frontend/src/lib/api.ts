@@ -48,10 +48,18 @@ export async function api<T = unknown>(
     }
   }
 
-  const res = await fetch(`${BASE}${path}`, {
-    ...rest,
-    headers: h,
-  });
+  let res: Response;
+  try {
+    res = await fetch(`${BASE}${path}`, {
+      ...rest,
+      headers: h,
+    });
+  } catch {
+    // fetch só lança aqui por falha de rede/conexão (não por status HTTP de
+    // erro, que cai no bloco abaixo) — a mensagem nativa do browser
+    // ("Failed to fetch") é técnica e em inglês, não deve chegar ao usuário.
+    throw new Error("Não foi possível conectar ao servidor. Verifique sua internet.");
+  }
 
   if (!res.ok) {
 
@@ -239,11 +247,11 @@ export const authApi = {
       body: JSON.stringify({ email, senha }),
     }),
 
-  cadastrar: (nome: string, email: string, senha: string) =>
+  cadastrar: (nome: string, email: string, senha: string, confirmarSenha: string) =>
     api<{ id: number; nome: string; email: string }>("/api/usuarios", {
       method: "POST",
       auth: false,
-      body: JSON.stringify({ nome, email, senha }),
+      body: JSON.stringify({ nome, email, senha, confirmarSenha }),
     }),
 
 };

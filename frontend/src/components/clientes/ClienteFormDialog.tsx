@@ -5,6 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import type { Cliente } from "@/lib/api";
+import { mascaraTelefone } from "@/lib/utils/whatsapp";
+import { bloquearTeclaInvalidaNome, bloquearTeclaInvalidaTelefone, filtrarNome } from "@/lib/utils";
 
 /**
  * Modal de cadastro/edição de cliente, reaproveitado pelos dois fluxos da
@@ -42,7 +44,7 @@ export function ClienteFormDialog({
     if (aberto) {
       setValores(
         cliente
-          ? { nome: cliente.nome, telefone: cliente.telefone, email: cliente.email ?? "", observacoes: cliente.observacoes ?? "" }
+          ? { nome: cliente.nome, telefone: mascaraTelefone(cliente.telefone), email: cliente.email ?? "", observacoes: cliente.observacoes ?? "" }
           : FORM_VAZIO,
       );
     }
@@ -72,10 +74,10 @@ export function ClienteFormDialog({
               <Input
                 id="cliente-nome"
                 required
-                minLength={2}
                 maxLength={100}
                 value={valores.nome}
-                onChange={(e) => setValores((v) => ({ ...v, nome: e.target.value }))}
+                onChange={(e) => setValores((v) => ({ ...v, nome: filtrarNome(e.target.value) }))}
+                onKeyDown={bloquearTeclaInvalidaNome}
               />
             </div>
 
@@ -83,11 +85,14 @@ export function ClienteFormDialog({
               <Label htmlFor="cliente-telefone">Telefone *</Label>
               <Input
                 id="cliente-telefone"
+                type="tel"
                 required
                 minLength={8}
                 maxLength={20}
+                placeholder="(11) 91234-5678"
                 value={valores.telefone}
-                onChange={(e) => setValores((v) => ({ ...v, telefone: e.target.value }))}
+                onChange={(e) => setValores((v) => ({ ...v, telefone: mascaraTelefone(e.target.value) }))}
+                onKeyDown={bloquearTeclaInvalidaTelefone}
               />
             </div>
 
@@ -96,6 +101,7 @@ export function ClienteFormDialog({
               <Input
                 id="cliente-email"
                 type="email"
+                maxLength={255}
                 value={valores.email}
                 onChange={(e) => setValores((v) => ({ ...v, email: e.target.value }))}
               />

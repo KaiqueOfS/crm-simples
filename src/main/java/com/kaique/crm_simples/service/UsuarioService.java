@@ -1,13 +1,18 @@
 package com.kaique.crm_simples.service;
 
 import com.kaique.crm_simples.dto.AtualizarPerfilRequest;
+import com.kaique.crm_simples.dto.CadastroUsuarioRequest;
 import com.kaique.crm_simples.exception.EmailJaCadastradoException;
 import com.kaique.crm_simples.exception.SenhasNaoCoincidemException;
 import com.kaique.crm_simples.exception.UsuarioNaoEncontradoException;
 import com.kaique.crm_simples.model.Usuario;
 import com.kaique.crm_simples.repository.UsuarioRepository;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import java.nio.charset.StandardCharsets;
+import java.util.regex.Pattern;
 
 /**
  * Serviço responsável pelas regras de negócio
@@ -19,6 +24,20 @@ import org.springframework.stereotype.Service;
 @Service
 public class UsuarioService {
 
+    // BCrypt trunca (e no Spring Security lança exceção) senhas acima de 72
+    // bytes — validamos em bytes, não em caracteres, porque um caractere
+    // multibyte (acentos, emojis, CJK) pode passar de 1 byte cada.
+    private static final int SENHA_MAX_BYTES = 72;
+
+    // Só letras (com acento), espaço, hífen e apóstrofo.
+    private static final Pattern NOME_CARACTERES_VALIDOS = Pattern.compile("^[\\p{L}\\s'-]+$");
+
+    // Nome completo: ao menos duas palavras separadas por espaço. Assume
+    // que o nome já passou por NOME_CARACTERES_VALIDOS e por setNome()
+    // (trim + colapso de espaços), então cada "palavra" aqui já é só
+    // letras/hífen/apóstrofo.
+    private static final Pattern NOME_COMPLETO = Pattern.compile("^[\\p{L}'-]+(?:\\s[\\p{L}'-]+)+$");
+
     private final UsuarioRepository repository;
     private final BCryptPasswordEncoder passwordEncoder;
 
@@ -28,6 +47,50 @@ public class UsuarioService {
 
         this.repository = repository;
         this.passwordEncoder = passwordEncoder;
+    }
+
+    /**
+     * Cadastra um novo usuário a partir dos dados do formulário de cadastro.
+     *
+     * Valida a confirmação de senha aqui (nunca só no frontend) e delega
+     * a persistência para {@link #salvar(Usuario)}.
+     *
+     * @param request dados recebidos na requisição.
+     * @return usuário salvo no banco.
+     */
+    public Usuario cadastrar(CadastroUsuarioRequest request) {
+
+        // Campo vazio já foi barrado pelo @NotBlank do DTO antes de chegar
+        // aqui. A partir daqui a prioridade é: caracteres inválidos → nome
+        // incompleto (ver validarNome).
+        validarNome(request.getNome());
+
+        if (!request.getSenha().equals(request.getConfirmarSenha())) {
+            throw new SenhasNaoCoincidemException();
+        }
+
+        Usuario usuario = new Usuario();
+        usuario.setNome(request.getNome());
+        usuario.setEmail(request.getEmail());
+        usuario.alterarSenha(request.getSenha());
+
+        return salvar(usuario);
+    }
+
+    /**
+     * Valida o campo nome do cadastro na ordem exigida pela Sprint 3.2.1.1:
+     * 1) caracteres inválidos, 2) nome incompleto (uma palavra só).
+     * Campo vazio é responsabilidade do @NotBlank do DTO (roda antes).
+     */
+    private void validarNome(String nome) {
+
+        if (!NOME_CARACTERES_VALIDOS.matcher(nome).matches()) {
+            throw new RuntimeException("O nome deve conter apenas letras.");
+        }
+
+        if (!NOME_COMPLETO.matcher(nome).matches()) {
+            throw new RuntimeException("Informe seu nome completo (nome e sobrenome).");
+        }
     }
 
     /**
@@ -51,12 +114,29 @@ public class UsuarioService {
             throw new EmailJaCadastradoException(usuario.getEmail());
         }
 
+        // Senha em bytes acima do limite do BCrypt: valida ANTES de
+        // criptografar para nunca deixar a exceção crua do BCrypt
+        // ("password cannot be more than 72 bytes", em inglês) vazar
+        // para o cliente.
+        if (usuario.getSenha().getBytes(StandardCharsets.UTF_8).length > SENHA_MAX_BYTES) {
+            throw new RuntimeException("Senha não pode ter mais que 72 bytes.");
+        }
+
         // Criptografa a senha antes de salvar no banco
         usuario.alterarSenha(
                 passwordEncoder.encode(usuario.getSenha())
         );
 
-        return repository.save(usuario);
+        try {
+            return repository.save(usuario);
+        } catch (DataIntegrityViolationException e) {
+            // Condição de corrida: duas requisições simultâneas passaram
+            // pela verificação de e-mail acima antes de qualquer uma
+            // salvar. Sem isso, o cliente recebia o erro cru do banco
+            // (nome de tabela, coluna e constraint) em vez da mensagem
+            // de negócio já usada no caso não concorrente.
+            throw new EmailJaCadastradoException(usuario.getEmail());
+        }
     }
 
     /**

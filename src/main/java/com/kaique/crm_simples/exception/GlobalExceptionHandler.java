@@ -4,9 +4,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -39,6 +41,43 @@ public class GlobalExceptionHandler {
                 .forEach(e -> erros.put(e.getField(), e.getDefaultMessage()));
 
         return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(erros);
+    }
+
+    /**
+     * Trata parâmetro de URL (query param ou path variable) com tipo errado
+     * — ex.: `?status=INEXISTENTE` (não é um StatusLead válido) ou
+     * `/api/clientes/abc` (id não é um Long). Sem este handler, o Spring
+     * devolve a mensagem crua da conversão, com nome de classe Java
+     * incluso (ex.: "Failed to convert value of type 'java.lang.String'
+     * to required type 'com.kaique...StatusLead'").
+     * HTTP 400 Bad Request.
+     */
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<Map<String, String>> tratarParametroInvalido(
+            MethodArgumentTypeMismatchException ex) {
+
+        String mensagem = "status".equals(ex.getName())
+                ? "Status inválido."
+                : "Parâmetro inválido.";
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(Map.of("erro", mensagem));
+    }
+
+    /**
+     * Trata corpo da requisição ilegível — JSON malformado ou um valor de
+     * enum inválido dentro do corpo (ex.: {"status": "NAO_EXISTE"}). Sem
+     * este handler, o Spring devolve a mensagem crua do Jackson, com nome
+     * de classe Java incluso (ex.: "Cannot deserialize value of type
+     * com.kaique...StatusLead from String \"NAO_EXISTE\"").
+     * HTTP 400 Bad Request.
+     */
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<Map<String, String>> tratarCorpoInvalido(
+            HttpMessageNotReadableException ex) {
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(Map.of("erro", "Dados enviados inválidos."));
     }
 
     /**

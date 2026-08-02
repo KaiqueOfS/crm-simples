@@ -4,6 +4,7 @@ import com.kaique.crm_simples.model.enums.LocalAtendimento;
 import com.kaique.crm_simples.model.enums.StatusAgendamento;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -17,6 +18,7 @@ import java.time.LocalTime;
 public class AgendamentoRequest {
 
     @NotBlank(message = "Título é obrigatório")
+    @Size(max = 255, message = "Título deve ter no máximo 255 caracteres")
     private String titulo;
 
     private String pessoa;

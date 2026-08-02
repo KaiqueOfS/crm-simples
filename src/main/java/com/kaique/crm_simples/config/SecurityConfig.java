@@ -1,5 +1,6 @@
 package com.kaique.crm_simples.config;
 
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -59,6 +60,16 @@ public class SecurityConfig {
                         // que cai no fallback do SpaFallbackController)
                         .anyRequest().permitAll())
 
+                // Sem isso, requisição sem token (ou com token inválido) ou
+                // acesso negado devolvia a Whitelabel Error Page do Spring
+                // Boot (HTML) em vez de JSON — inconsistente com o resto da
+                // API, que sempre responde JSON.
+                .exceptionHandling(handling -> handling
+                        .authenticationEntryPoint((request, response, authException) ->
+                                escreverErroJson(response, HttpServletResponse.SC_UNAUTHORIZED, "Não autenticado."))
+                        .accessDeniedHandler((request, response, accessDeniedException) ->
+                                escreverErroJson(response, HttpServletResponse.SC_FORBIDDEN, "Acesso negado.")))
+
                 // Registra o filtro JWT antes do filtro padrão do Spring Security
                 // Isso garante que o token seja validado em toda requisição
                 .addFilterBefore(
@@ -66,5 +77,12 @@ public class SecurityConfig {
                         UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
+    }
+
+    private void escreverErroJson(HttpServletResponse response, int status, String mensagem) throws java.io.IOException {
+        response.setStatus(status);
+        response.setContentType("application/json");
+        response.setCharacterEncoding("UTF-8");
+        response.getWriter().write("{\"erro\":\"" + mensagem + "\"}");
     }
 }

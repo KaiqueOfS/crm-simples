@@ -87,7 +87,7 @@ class SecurityIntegrationTest {
     @DirtiesContext(methodMode = DirtiesContext.MethodMode.AFTER_METHOD)
     void loginBloqueiaAposExcederLimiteDeTentativasPorEmail() throws Exception {
         String email = "rate.limit@teste.local";
-        cadastrarUsuario(email, "Usuário Rate Limit", "senha-correta");
+        cadastrarUsuario(email, "Usuário Rate Limit", "senha-correta1");
 
         // Consome o orçamento de tentativas do e-mail (padrão: 5 por janela) com senha errada.
         for (int i = 0; i < 5; i++) {
@@ -100,7 +100,7 @@ class SecurityIntegrationTest {
         // 6ª tentativa: mesmo com a senha CORRETA, o limite já foi atingido.
         mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(corpoLogin(email, "senha-correta")))
+                        .content(corpoLogin(email, "senha-correta1")))
                 .andExpect(status().is(429));
     }
 
@@ -108,8 +108,8 @@ class SecurityIntegrationTest {
         mockMvc.perform(post("/api/usuarios")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"nome": "%s", "email": "%s", "senha": "%s"}
-                                """.formatted(nome, email, senha)))
+                                {"nome": "%s", "email": "%s", "senha": "%s", "confirmarSenha": "%s"}
+                                """.formatted(nome, email, senha, senha)))
                 .andExpect(status().isOk());
     }
 

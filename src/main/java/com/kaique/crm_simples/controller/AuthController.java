@@ -59,6 +59,15 @@ public class AuthController {
             throw new CredenciaisInvalidasException();
         }
 
+        // Senha ausente/em branco cai na mesma exceção genérica acima —
+        // sem isso, passwordEncoder.matches(null, ...) lança
+        // IllegalArgumentException, que vaza como 400 (diferente do 401
+        // do e-mail inexistente) e reabre o user enumeration que este
+        // método existe justamente para evitar.
+        if (request.getSenha() == null || request.getSenha().isBlank()) {
+            throw new CredenciaisInvalidasException();
+        }
+
         boolean senhaValida =
                 passwordEncoder.matches(
                         request.getSenha(),
