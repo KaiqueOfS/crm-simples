@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { AlertTriangle } from "lucide-react";
 import { type Usuario, usuariosApi } from "@/lib/api";
+import { bloquearTeclaInvalidaNome, filtrarNome } from "@/lib/utils";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -87,12 +88,21 @@ export default function Perfil() {
             <form onSubmit={salvar} className="space-y-4">
               <div className="space-y-1">
                 <Label htmlFor="nome">Nome</Label>
-                <Input id="nome" required minLength={2} maxLength={100} value={nome} onChange={(e) => setNome(e.target.value)} />
+                <Input
+                  id="nome"
+                  required
+                  minLength={2}
+                  maxLength={100}
+                  autoComplete="name"
+                  value={nome}
+                  onChange={(e) => setNome(filtrarNome(e.target.value))}
+                  onKeyDown={bloquearTeclaInvalidaNome}
+                />
               </div>
 
               <div className="space-y-1">
                 <Label htmlFor="email">E-mail</Label>
-                <Input id="email" type="email" disabled value={usuario.email} />
+                <Input id="email" type="email" disabled autoComplete="email" value={usuario.email} />
                 <p className="text-xs text-muted-foreground">O e-mail é usado para login e não pode ser alterado aqui.</p>
               </div>
 
@@ -103,11 +113,11 @@ export default function Perfil() {
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-1">
                     <Label htmlFor="nova-senha">Nova senha</Label>
-                    <Input id="nova-senha" type="password" minLength={6} value={novaSenha} onChange={(e) => setNovaSenha(e.target.value)} />
+                    <Input id="nova-senha" type="password" minLength={6} autoComplete="new-password" value={novaSenha} onChange={(e) => setNovaSenha(e.target.value)} />
                   </div>
                   <div className="space-y-1">
                     <Label htmlFor="confirmar-senha">Confirmar nova senha</Label>
-                    <Input id="confirmar-senha" type="password" minLength={6} value={confirmarSenha} onChange={(e) => setConfirmarSenha(e.target.value)} />
+                    <Input id="confirmar-senha" type="password" minLength={6} autoComplete="new-password" value={confirmarSenha} onChange={(e) => setConfirmarSenha(e.target.value)} />
                   </div>
                 </div>
               </div>

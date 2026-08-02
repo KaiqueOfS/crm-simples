@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { AlertTriangle, CalendarDays } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -301,6 +301,10 @@ export default function Agenda() {
   const [compromissoEmEdicao, setCompromissoEmEdicao] = useState<Agendamento | null>(null);
   const [compromissoParaExcluir, setCompromissoParaExcluir] = useState<Agendamento | null>(null);
 
+  // Evita disparar dois PATCH /concluir para o mesmo compromisso quando o
+  // usuário clica duas vezes rápido antes da UI atualizar.
+  const concluindoIdsRef = useRef<Set<number>>(new Set());
+
   useEffect(() => {
     void carregarCompromissos();
   }, []);
@@ -423,12 +427,16 @@ export default function Agenda() {
   }
 
   async function concluirCompromisso(compromisso: Agendamento) {
+    if (concluindoIdsRef.current.has(compromisso.id)) return;
+    concluindoIdsRef.current.add(compromisso.id);
     try {
       const atualizado = await agendamentosApi.concluir(compromisso.id);
       setCompromissos((atual) => atual.map((c) => (c.id === atualizado.id ? atualizado : c)));
       toast.success("Compromisso concluído");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Não foi possível concluir o compromisso.");
+    } finally {
+      concluindoIdsRef.current.delete(compromisso.id);
     }
   }
 

@@ -149,6 +149,7 @@ export function CompromissoDialog({
               <Input
                 id="compromisso-titulo"
                 required
+                maxLength={255}
                 value={valores.titulo}
                 onChange={(e) => setValores((v) => ({ ...v, titulo: e.target.value }))}
               />

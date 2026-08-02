@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { AlertTriangle, Calendar, CalendarClock, CalendarDays, CheckCircle2, FileText, MessageCircle, Users, Wallet } from "lucide-react";
@@ -54,6 +54,11 @@ export default function Hoje() {
 
   const [formAberto, setFormAberto] = useState(false);
   const [abrindoWhatsapp, setAbrindoWhatsapp] = useState(false);
+  const [concluindo, setConcluindo] = useState(false);
+  // Guard síncrono: setState só reflete no próximo render, então dois
+  // cliques disparados antes do React re-renderizar ainda veriam
+  // `concluindo` desatualizado. O ref é atualizado na hora.
+  const concluindoRef = useRef(false);
 
   const proximo = dados?.proximoCompromisso ?? null;
   const totalPendentes = dados?.totalPendentes ?? 0;
@@ -62,13 +67,18 @@ export default function Hoje() {
   const compromissosHoje = dados?.compromissosHoje ?? [];
 
   async function concluirProximo() {
-    if (!proximo) return;
+    if (!proximo || concluindoRef.current) return;
+    concluindoRef.current = true;
+    setConcluindo(true);
     try {
       await agendamentosApi.concluir(proximo.id);
       toast.success("Compromisso concluído");
       await recarregar();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Não foi possível concluir o compromisso.");
+    } finally {
+      concluindoRef.current = false;
+      setConcluindo(false);
     }
   }
 
@@ -183,8 +193,8 @@ export default function Hoje() {
               </div>
 
               <div className="mt-4 flex flex-wrap gap-2">
-                <Button variant="success" size="sm" onClick={() => void concluirProximo()}>
-                  Concluir
+                <Button variant="success" size="sm" disabled={concluindo} onClick={() => void concluirProximo()}>
+                  {concluindo ? "Concluindo…" : "Concluir"}
                 </Button>
                 {proximo.clienteId != null && (
                   <Button variant="outline" size="sm" className="gap-1.5" disabled={abrindoWhatsapp} onClick={() => void abrirWhatsappProximo()}>
