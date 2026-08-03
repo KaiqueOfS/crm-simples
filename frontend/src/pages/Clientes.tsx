@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { Avatar } from "@/components/ui/avatar-inicial";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { ConfirmarExclusaoDialog } from "@/components/ui/confirmar-exclusao-dialog";
 import { ClienteFormDialog, type ClienteFormValues } from "@/components/clientes/ClienteFormDialog";
 import { SecaoProximosCompromissos } from "@/components/clientes/SecaoProximosCompromissos";
 import { SecaoHistorico } from "@/components/clientes/SecaoHistorico";
@@ -295,8 +296,9 @@ export default function Clientes() {
       />
 
       {clienteParaExcluir && (
-        <ConfirmarExclusao
-          cliente={clienteParaExcluir}
+        <ConfirmarExclusaoDialog
+          titulo="Remover cliente"
+          nomeItem={clienteParaExcluir.nome}
           aoCancelar={() => setClienteParaExcluir(null)}
           aoConfirmar={confirmarExclusao}
         />
@@ -436,48 +438,6 @@ function SecaoObservacoes({ cliente }: { cliente: Cliente }) {
           <p className="text-sm text-muted-foreground">Nenhuma observação cadastrada</p>
         </div>
       )}
-    </div>
-  );
-}
-
-/* ─── Confirmação de exclusão ────────────────────────────── */
-function ConfirmarExclusao({
-  cliente,
-  aoCancelar,
-  aoConfirmar,
-}: {
-  cliente: Cliente;
-  aoCancelar: () => void;
-  aoConfirmar: () => Promise<void>;
-}) {
-  const [excluindo, setExcluindo] = useState(false);
-
-  async function confirmar() {
-    setExcluindo(true);
-    try {
-      await aoConfirmar();
-    } finally {
-      setExcluindo(false);
-    }
-  }
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={aoCancelar} />
-      <div className="relative z-10 w-full max-w-sm rounded-2xl border border-border bg-card p-5">
-        <p className="text-sm font-semibold text-foreground">Remover cliente</p>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Tem certeza que deseja remover <strong>{cliente.nome}</strong>? Essa ação não pode ser desfeita.
-        </p>
-        <div className="mt-4 flex gap-2">
-          <Button variant="danger" className="flex-1" onClick={() => void confirmar()} disabled={excluindo}>
-            {excluindo ? "Removendo…" : "Remover"}
-          </Button>
-          <Button variant="outline" className="flex-1" onClick={aoCancelar}>
-            Cancelar
-          </Button>
-        </div>
-      </div>
     </div>
   );
 }

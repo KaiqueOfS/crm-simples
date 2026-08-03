@@ -12,7 +12,6 @@ import com.kaique.crm_simples.model.enums.LocalAtendimento;
 import com.kaique.crm_simples.model.enums.StatusAgendamento;
 import com.kaique.crm_simples.model.enums.TipoAtendimento;
 import com.kaique.crm_simples.repository.AgendamentoRepository;
-import com.kaique.crm_simples.repository.ClienteRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -47,7 +46,7 @@ class AgendamentoServiceTest {
     private AgendamentoRepository repository;
 
     @Mock
-    private ClienteRepository clienteRepository;
+    private ClienteService clienteService;
 
     @Mock
     private UsuarioAutenticadoService usuarioAutenticadoService;
@@ -60,7 +59,7 @@ class AgendamentoServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new AgendamentoService(repository, clienteRepository, usuarioAutenticadoService, configuracaoUsuarioService);
+        service = new AgendamentoService(repository, clienteService, usuarioAutenticadoService, configuracaoUsuarioService);
         usuarioLogado = usuarioComId(1L);
         when(usuarioAutenticadoService.obterUsuarioLogado()).thenReturn(usuarioLogado);
         // Default para os testes que não são sobre local de atendimento: conta
@@ -145,7 +144,7 @@ class AgendamentoServiceTest {
     @Test
     void associaClienteESincronizaPessoaQuandoClienteIdValido() {
         Cliente cliente = clienteComId(5L, usuarioLogado);
-        when(clienteRepository.findById(5L)).thenReturn(Optional.of(cliente));
+        when(clienteService.buscarClienteDoUsuario(5L, usuarioLogado)).thenReturn(cliente);
 
         AgendamentoRequest request = new AgendamentoRequest();
         request.setTitulo("Visita técnica");
@@ -166,7 +165,7 @@ class AgendamentoServiceTest {
 
     @Test
     void lancaExcecaoQuandoClienteIdNaoExiste() {
-        when(clienteRepository.findById(999L)).thenReturn(Optional.empty());
+        when(clienteService.buscarClienteDoUsuario(999L, usuarioLogado)).thenThrow(new ClienteNaoEncontradoException(999L));
 
         AgendamentoRequest request = new AgendamentoRequest();
         request.setTitulo("Visita técnica");
@@ -180,8 +179,11 @@ class AgendamentoServiceTest {
 
     @Test
     void lancaExcecaoQuandoClienteIdPertenceAOutroUsuario() {
-        Cliente clienteDeOutroUsuario = clienteComId(5L, usuarioComId(2L));
-        when(clienteRepository.findById(5L)).thenReturn(Optional.of(clienteDeOutroUsuario));
+        // A checagem de posse em si é responsabilidade de
+        // ClienteService.buscarClienteDoUsuario (já coberta em
+        // ClienteServiceTest) — aqui só confirmamos que AgendamentoService
+        // propaga a exceção corretamente.
+        when(clienteService.buscarClienteDoUsuario(5L, usuarioLogado)).thenThrow(new AcessoNegadoException("cliente"));
 
         AgendamentoRequest request = new AgendamentoRequest();
         request.setTitulo("Visita técnica");
@@ -196,7 +198,7 @@ class AgendamentoServiceTest {
     @Test
     void listaAgendamentosDeUmClienteDoUsuario() {
         Cliente cliente = clienteComId(5L, usuarioLogado);
-        when(clienteRepository.findById(5L)).thenReturn(Optional.of(cliente));
+        when(clienteService.buscarClienteDoUsuario(5L, usuarioLogado)).thenReturn(cliente);
 
         Agendamento agendamento = new Agendamento();
         agendamento.setTitulo("Troca de óleo");
@@ -213,15 +215,14 @@ class AgendamentoServiceTest {
 
     @Test
     void lancaExcecaoAoListarPorClienteInexistente() {
-        when(clienteRepository.findById(999L)).thenReturn(Optional.empty());
+        when(clienteService.buscarClienteDoUsuario(999L, usuarioLogado)).thenThrow(new ClienteNaoEncontradoException(999L));
 
         assertThrows(ClienteNaoEncontradoException.class, () -> service.listarPorCliente(999L));
     }
 
     @Test
     void lancaExcecaoAoListarPorClienteDeOutroUsuario() {
-        Cliente clienteDeOutroUsuario = clienteComId(5L, usuarioComId(2L));
-        when(clienteRepository.findById(5L)).thenReturn(Optional.of(clienteDeOutroUsuario));
+        when(clienteService.buscarClienteDoUsuario(5L, usuarioLogado)).thenThrow(new AcessoNegadoException("cliente"));
 
         assertThrows(AcessoNegadoException.class, () -> service.listarPorCliente(5L));
     }
@@ -229,7 +230,7 @@ class AgendamentoServiceTest {
     @Test
     void listaHistoricoApenasComAgendamentosConcluidos() {
         Cliente cliente = clienteComId(5L, usuarioLogado);
-        when(clienteRepository.findById(5L)).thenReturn(Optional.of(cliente));
+        when(clienteService.buscarClienteDoUsuario(5L, usuarioLogado)).thenReturn(cliente);
 
         Agendamento concluido = new Agendamento();
         concluido.setTitulo("Instalação elétrica");
@@ -248,15 +249,14 @@ class AgendamentoServiceTest {
 
     @Test
     void lancaExcecaoAoListarHistoricoDeClienteInexistente() {
-        when(clienteRepository.findById(999L)).thenReturn(Optional.empty());
+        when(clienteService.buscarClienteDoUsuario(999L, usuarioLogado)).thenThrow(new ClienteNaoEncontradoException(999L));
 
         assertThrows(ClienteNaoEncontradoException.class, () -> service.listarHistorico(999L));
     }
 
     @Test
     void lancaExcecaoAoListarHistoricoDeClienteDeOutroUsuario() {
-        Cliente clienteDeOutroUsuario = clienteComId(5L, usuarioComId(2L));
-        when(clienteRepository.findById(5L)).thenReturn(Optional.of(clienteDeOutroUsuario));
+        when(clienteService.buscarClienteDoUsuario(5L, usuarioLogado)).thenThrow(new AcessoNegadoException("cliente"));
 
         assertThrows(AcessoNegadoException.class, () -> service.listarHistorico(5L));
     }

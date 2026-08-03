@@ -35,9 +35,6 @@ export function Button({
   className,
   ...props
 }: ButtonProps) {
-  const Comp = asChild ? Slot : "button";
-
-
   const variants = {
 
     primary:

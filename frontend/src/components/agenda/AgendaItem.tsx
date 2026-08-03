@@ -1,10 +1,9 @@
-import { useState, type MouseEvent } from "react";
+import { type MouseEvent } from "react";
 import { Building2, MapPin, MessageCircle } from "lucide-react";
-import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { clientesApi, type Agendamento, type CategoriaAgendamento, type LocalAtendimento, type StatusAgendamento } from "@/lib/api";
-import { linkWhatsapp } from "@/lib/utils/whatsapp";
+import { type Agendamento, type CategoriaAgendamento, type LocalAtendimento, type StatusAgendamento } from "@/lib/api";
+import { useAbrirWhatsappDoCliente } from "@/hooks/useAbrirWhatsappDoCliente";
 import { formatarHora } from "@/lib/datas";
 
 /**
@@ -66,6 +65,22 @@ export function LocalAtendimentoBadge({
   );
 }
 
+/** Filtra e ordena os compromissos de um dia específico — usado pelas três visões (Hoje/Semana/Mês). */
+export function compromissosDoDia(compromissos: Agendamento[], data: string): Agendamento[] {
+  return compromissos
+    .filter((c) => c.data === data)
+    .sort((a, b) => a.hora.localeCompare(b.hora));
+}
+
+/** Ações compartilhadas pelas três visões da Agenda ao interagir com um compromisso. */
+export type AcoesCompromisso = {
+  selecionadoId: number | null;
+  aoSelecionar: (id: number) => void;
+  aoEditar: (compromisso: Agendamento) => void;
+  aoExcluir: (compromisso: Agendamento) => void;
+  aoConcluir: (compromisso: Agendamento) => void;
+};
+
 /** Cartão de um compromisso na agenda: horário, título, cliente, tipo e status. */
 export function AgendaItem({
   compromisso,
@@ -84,24 +99,14 @@ export function AgendaItem({
 }) {
   const cfg = CATEGORIA_CFG[compromisso.categoria];
   const statusCfg = STATUS_AGENDAMENTO_CFG[compromisso.status];
-  const [abrindoWhatsapp, setAbrindoWhatsapp] = useState(false);
+  const { abrirWhatsapp: abrirWhatsappDoCliente, abrindoWhatsapp } = useAbrirWhatsappDoCliente();
 
   // O compromisso só guarda o clienteId — o telefone vive no Cliente, então
   // é buscado sob demanda (só quando o usuário clica), sem correspondência
   // por nome e sem carregar a lista de clientes inteira para cada item.
-  async function abrirWhatsapp(e: MouseEvent) {
+  function abrirWhatsapp(e: MouseEvent) {
     e.stopPropagation();
-    if (!compromisso.clienteId) return;
-
-    setAbrindoWhatsapp(true);
-    try {
-      const cliente = await clientesApi.get(compromisso.clienteId);
-      window.open(linkWhatsapp(cliente.telefone), "_blank", "noopener,noreferrer");
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Não foi possível abrir o WhatsApp deste cliente.");
-    } finally {
-      setAbrindoWhatsapp(false);
-    }
+    void abrirWhatsappDoCliente(compromisso.clienteId);
   }
 
   return (

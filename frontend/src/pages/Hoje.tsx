@@ -8,9 +8,9 @@ import { StatCard } from "@/components/ui/stat-card";
 import { CATEGORIA_CFG, LocalAtendimentoBadge, STATUS_AGENDAMENTO_CFG } from "@/components/agenda/AgendaItem";
 import { CompromissoDialog } from "@/components/agenda/CompromissoDialog";
 import { HOJE_CHAVE, dataPorExtenso, formatarHora } from "@/lib/datas";
-import { agendamentosApi, clientesApi, type AgendamentoInput } from "@/lib/api";
-import { linkWhatsapp } from "@/lib/utils/whatsapp";
+import { agendamentosApi, type AgendamentoInput } from "@/lib/api";
 import { useMeuDia } from "@/hooks/useMeuDia";
+import { useAbrirWhatsappDoCliente } from "@/hooks/useAbrirWhatsappDoCliente";
 
 /**
  * Meu Dia — central operacional do Orbis (Fase 12).
@@ -53,8 +53,8 @@ export default function Hoje() {
   const { dados, carregando, erro, recarregar } = useMeuDia();
 
   const [formAberto, setFormAberto] = useState(false);
-  const [abrindoWhatsapp, setAbrindoWhatsapp] = useState(false);
   const [concluindo, setConcluindo] = useState(false);
+  const { abrirWhatsapp: abrirWhatsappProximo, abrindoWhatsapp } = useAbrirWhatsappDoCliente();
   // Guard síncrono: setState só reflete no próximo render, então dois
   // cliques disparados antes do React re-renderizar ainda veriam
   // `concluindo` desatualizado. O ref é atualizado na hora.
@@ -79,21 +79,6 @@ export default function Hoje() {
     } finally {
       concluindoRef.current = false;
       setConcluindo(false);
-    }
-  }
-
-  // Mesma lógica de AgendaItem: o telefone vive no Cliente, não no
-  // compromisso — busca sob demanda, sem correspondência por nome.
-  async function abrirWhatsappProximo() {
-    if (!proximo?.clienteId) return;
-    setAbrindoWhatsapp(true);
-    try {
-      const cliente = await clientesApi.get(proximo.clienteId);
-      window.open(linkWhatsapp(cliente.telefone), "_blank", "noopener,noreferrer");
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Não foi possível abrir o WhatsApp deste cliente.");
-    } finally {
-      setAbrindoWhatsapp(false);
     }
   }
 
@@ -197,7 +182,7 @@ export default function Hoje() {
                   {concluindo ? "Concluindo…" : "Concluir"}
                 </Button>
                 {proximo.clienteId != null && (
-                  <Button variant="outline" size="sm" className="gap-1.5" disabled={abrindoWhatsapp} onClick={() => void abrirWhatsappProximo()}>
+                  <Button variant="outline" size="sm" className="gap-1.5" disabled={abrindoWhatsapp} onClick={() => void abrirWhatsappProximo(proximo.clienteId)}>
                     <MessageCircle className="h-4 w-4" strokeWidth={1.75} />
                     WhatsApp
                   </Button>

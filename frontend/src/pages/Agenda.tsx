@@ -1,13 +1,15 @@
 import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { AlertTriangle, CalendarDays } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { ConfirmarExclusaoDialog } from "@/components/ui/confirmar-exclusao-dialog";
 import { AgendaHeader, type Visualizacao } from "@/components/agenda/AgendaHeader";
-import { AgendaItem, CATEGORIA_CFG } from "@/components/agenda/AgendaItem";
+import { AgendaItem, compromissosDoDia, type AcoesCompromisso } from "@/components/agenda/AgendaItem";
+import { VisaoSemana } from "@/components/agenda/VisaoSemana";
+import { VisaoMes } from "@/components/agenda/VisaoMes";
 import { CompromissoDialog } from "@/components/agenda/CompromissoDialog";
-import { HOJE, HOJE_CHAVE, datasDaSemana, dataPorExtenso, doisDigitos, paraChave, paraDataLocal } from "@/lib/datas";
+import { HOJE, HOJE_CHAVE, MESES, dataPorExtenso, datasDaSemana, paraChave } from "@/lib/datas";
 import { agendamentosApi, type Agendamento, type AgendamentoInput } from "@/lib/api";
 
 /**
@@ -15,32 +17,25 @@ import { agendamentosApi, type Agendamento, type AgendamentoInput } from "@/lib/
  * Visões Hoje, Semana e Mês dos compromissos do usuário, com cadastro,
  * edição e exclusão integrados ao backend real (`agendamentosApi`).
  *
+ * Semana e Mês vivem em components/agenda/Visao{Semana,Mes}.tsx (lógica
+ * substancial o bastante pra justificar arquivo próprio); Hoje é simples o
+ * bastante pra ficar aqui mesmo, como função interna deste arquivo.
+ *
  * Preparado para a futura integração Agenda → Meu Dia: quando o "Próximo
  * compromisso" da tela inicial passar a vir da API real em vez do mock
  * atual, ele pode reaproveitar `agendamentosApi.list()` e `AgendaItem` —
  * nada nesta fase precisa mudar para isso acontecer.
  */
 
-const MESES = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
-const DIAS_ABREV    = ["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"];
-const DIAS_COMPLETO = ["Domingo","Segunda","Terça","Quarta","Quinta","Sexta","Sábado"];
-
-function compromissosDoDia(compromissos: Agendamento[], data: string): Agendamento[] {
-  return compromissos
-    .filter((c) => c.data === data)
-    .sort((a, b) => a.hora.localeCompare(b.hora));
-}
-
-type AcoesCompromisso = {
-  selecionadoId: number | null;
-  aoSelecionar: (id: number) => void;
-  aoEditar: (compromisso: Agendamento) => void;
-  aoExcluir: (compromisso: Agendamento) => void;
-  aoConcluir: (compromisso: Agendamento) => void;
-};
-
 /* ─── Visão: Hoje ────────────────────────────────────────── */
-function VisaoHoje({ compromissos, selecionadoId, aoSelecionar, aoEditar, aoExcluir, aoConcluir }: AcoesCompromisso & { compromissos: Agendamento[] }) {
+function VisaoHoje({
+  compromissos,
+  selecionadoId,
+  aoSelecionar,
+  aoEditar,
+  aoExcluir,
+  aoConcluir,
+}: AcoesCompromisso & { compromissos: Agendamento[] }) {
   const doDia = compromissosDoDia(compromissos, HOJE_CHAVE);
   const rotulo = dataPorExtenso(HOJE);
 
@@ -72,217 +67,6 @@ function VisaoHoje({ compromissos, selecionadoId, aoSelecionar, aoEditar, aoExcl
   );
 }
 
-/* ─── Visão: Semana ──────────────────────────────────────── */
-function VisaoSemana({
-  compromissos, dataBase, selecionadoId, aoSelecionar, aoEditar, aoExcluir, aoConcluir,
-}: AcoesCompromisso & { compromissos: Agendamento[]; dataBase: Date }) {
-  const semana = datasDaSemana(dataBase);
-
-  return (
-    <div>
-      {/* Tira de dias */}
-      <div className="mb-5 grid grid-cols-7 gap-1">
-        {semana.map((dia, indice) => {
-          const chave = paraChave(dia);
-          const ehHoje = chave === HOJE_CHAVE;
-          const doDia = compromissosDoDia(compromissos, chave);
-          return (
-            <div key={indice} className="flex flex-col items-center gap-1">
-              <span className="text-[10px] uppercase tracking-wide text-muted-foreground">{DIAS_ABREV[indice]}</span>
-              <div className={cn(
-                "flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium",
-                ehHoje ? "bg-orbis-blue text-white" : "text-foreground",
-              )}>
-                {dia.getDate()}
-              </div>
-              <div className="flex h-2 gap-0.5">
-                {doDia.slice(0, 3).map((compromisso, j) => (
-                  <div key={j} className={cn("h-1.5 w-1.5 rounded-full", CATEGORIA_CFG[compromisso.categoria].ponto)} />
-                ))}
-                {doDia.length > 3 && <span className="text-[8px] text-muted-foreground">+{doDia.length - 3}</span>}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Compromissos agrupados por dia */}
-      <div className="space-y-5">
-        {semana.map((dia, indice) => {
-          const chave = paraChave(dia);
-          const doDia = compromissosDoDia(compromissos, chave);
-          if (doDia.length === 0) return null;
-          const ehHoje = chave === HOJE_CHAVE;
-          return (
-            <div key={indice}>
-              <div className="mb-2 flex items-center gap-2">
-                <span className={cn("text-xs font-semibold", ehHoje ? "text-orbis-blue" : "text-muted-foreground")}>
-                  {DIAS_COMPLETO[indice]}, {dia.getDate()} de {MESES[dia.getMonth()]}
-                </span>
-                {ehHoje && (
-                  <span className="rounded-full bg-orbis-blue-tint px-2 py-0.5 text-[10px] font-medium text-orbis-blue">Hoje</span>
-                )}
-              </div>
-              <div className="flex flex-col gap-2">
-                {doDia.map((compromisso) => (
-                  <AgendaItem
-                    key={compromisso.id}
-                    compromisso={compromisso}
-                    selecionado={selecionadoId === compromisso.id}
-                    aoClicar={() => aoSelecionar(compromisso.id)}
-                    aoEditar={() => aoEditar(compromisso)}
-                    aoExcluir={() => aoExcluir(compromisso)}
-                    aoConcluir={() => aoConcluir(compromisso)}
-                  />
-                ))}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-/* ─── Visão: Mês ─────────────────────────────────────────── */
-function VisaoMes({
-  compromissos, ano, mes, dataSelecionada, aoSelecionarData, selecionadoId, aoSelecionar, aoEditar, aoExcluir, aoConcluir,
-}: AcoesCompromisso & {
-  compromissos: Agendamento[];
-  ano: number; mes: number;
-  dataSelecionada: string; aoSelecionarData: (d: string) => void;
-}) {
-  const primeiroDiaSemana = new Date(ano, mes, 1).getDay();
-  const diasNoMes = new Date(ano, mes + 1, 0).getDate();
-  const diasNoMesAnterior = new Date(ano, mes, 0).getDate();
-
-  const celulas: { dia: number; foraDoMes: boolean }[] = [];
-  for (let i = 0; i < primeiroDiaSemana; i++) {
-    celulas.push({ dia: diasNoMesAnterior - primeiroDiaSemana + 1 + i, foraDoMes: true });
-  }
-  for (let d = 1; d <= diasNoMes; d++) {
-    celulas.push({ dia: d, foraDoMes: false });
-  }
-  while (celulas.length % 7 !== 0) {
-    celulas.push({ dia: celulas.length - primeiroDiaSemana - diasNoMes + 1, foraDoMes: true });
-  }
-
-  const doDiaSelecionado = compromissosDoDia(compromissos, dataSelecionada);
-
-  return (
-    <div className="grid gap-6 lg:grid-cols-[1fr_300px]">
-
-      {/* Grade do calendário */}
-      <div>
-        <div className="mb-1 grid grid-cols-7">
-          {DIAS_ABREV.map((dia) => (
-            <div key={dia} className="py-2 text-center text-[10px] font-medium uppercase tracking-wide text-muted-foreground">{dia}</div>
-          ))}
-        </div>
-        <div className="grid grid-cols-7 gap-0.5">
-          {celulas.map((celula, indice) => {
-            if (celula.foraDoMes) return <div key={indice} className="aspect-square" />;
-            const chave = `${ano}-${doisDigitos(mes + 1)}-${doisDigitos(celula.dia)}`;
-            const doDia = compromissosDoDia(compromissos, chave);
-            const ehHoje = chave === HOJE_CHAVE;
-            const estaSelecionado = chave === dataSelecionada;
-            return (
-              <button
-                key={indice}
-                onClick={() => aoSelecionarData(chave)}
-                className={cn(
-                  "flex flex-col items-center gap-1 rounded-xl p-1.5 orbis-transition hover:bg-accent",
-                  ehHoje && !estaSelecionado && "cal-today",
-                  estaSelecionado && "cal-selected",
-                )}
-              >
-                <span className={cn("text-xs font-medium leading-none", (ehHoje || estaSelecionado) ? "text-orbis-blue" : "text-foreground")}>
-                  {celula.dia}
-                </span>
-                <div className="flex flex-wrap justify-center gap-0.5">
-                  {doDia.slice(0, 3).map((compromisso, j) => (
-                    <div key={j} className={cn("h-1 w-1 rounded-full", CATEGORIA_CFG[compromisso.categoria].ponto)} />
-                  ))}
-                </div>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Detalhe do dia selecionado */}
-      <div>
-        <p className="mb-3 text-sm font-semibold text-foreground">
-          {paraDataLocal(dataSelecionada).toLocaleDateString("pt-BR", { day: "numeric", month: "long" })}
-        </p>
-        {doDiaSelecionado.length === 0 ? (
-          <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border py-10 text-center">
-            <CalendarDays className="mb-2 h-6 w-6 text-muted-foreground/50" strokeWidth={1.5} />
-            <p className="text-xs text-muted-foreground">Sem compromissos neste dia</p>
-          </div>
-        ) : (
-          <div className="flex flex-col gap-2">
-            {doDiaSelecionado.map((compromisso) => (
-              <AgendaItem
-                key={compromisso.id}
-                compromisso={compromisso}
-                selecionado={selecionadoId === compromisso.id}
-                aoClicar={() => aoSelecionar(compromisso.id)}
-                aoEditar={() => aoEditar(compromisso)}
-                aoExcluir={() => aoExcluir(compromisso)}
-                aoConcluir={() => aoConcluir(compromisso)}
-              />
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-/* ─── Confirmação de exclusão ────────────────────────────── */
-function ConfirmarExclusaoCompromisso({
-  compromisso,
-  aoCancelar,
-  aoConfirmar,
-}: {
-  compromisso: Agendamento;
-  aoCancelar: () => void;
-  aoConfirmar: () => Promise<void>;
-}) {
-  const [excluindo, setExcluindo] = useState(false);
-
-  async function confirmar() {
-    setExcluindo(true);
-    try {
-      await aoConfirmar();
-    } finally {
-      setExcluindo(false);
-    }
-  }
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={aoCancelar} />
-      <div className="relative z-10 w-full max-w-sm rounded-2xl border border-border bg-card p-5">
-        <p className="text-sm font-semibold text-foreground">Remover compromisso</p>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Tem certeza que deseja remover <strong>{compromisso.titulo}</strong>? Essa ação não pode ser desfeita.
-        </p>
-        <div className="mt-4 flex gap-2">
-          <Button variant="danger" className="flex-1" onClick={() => void confirmar()} disabled={excluindo}>
-            {excluindo ? "Removendo…" : "Remover"}
-          </Button>
-          <Button variant="outline" className="flex-1" onClick={aoCancelar}>
-            Cancelar
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* ─── Página principal ───────────────────────────────────── */
 export default function Agenda() {
   const [searchParams] = useSearchParams();
 
@@ -531,8 +315,9 @@ export default function Agenda() {
       />
 
       {compromissoParaExcluir && (
-        <ConfirmarExclusaoCompromisso
-          compromisso={compromissoParaExcluir}
+        <ConfirmarExclusaoDialog
+          titulo="Remover compromisso"
+          nomeItem={compromissoParaExcluir.titulo}
           aoCancelar={() => setCompromissoParaExcluir(null)}
           aoConfirmar={confirmarExclusao}
         />

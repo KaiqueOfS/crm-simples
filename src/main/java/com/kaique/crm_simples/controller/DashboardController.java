@@ -7,39 +7,20 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * ==========================================================
- * Classe: DashboardController
+ * Controller responsável pelos endpoints do dashboard.
  *
- * Responsabilidade:
- * Expor os endpoints responsáveis pelo dashboard do CRM.
- *
- * O dashboard apresenta indicadores importantes para que
- * o usuário acompanhe rapidamente a situação dos seus leads.
- *
- * Projeto: CRM Simples
- * ==========================================================
+ * O dashboard apresenta indicadores importantes para que o usuário
+ * acompanhe rapidamente a situação dos seus leads.
  */
 @RestController
 @RequestMapping("/api/dashboard")
 public class DashboardController {
 
-    // ==========================================================
-    // Dependências
-    // ==========================================================
-
     private final DashboardService service;
-
-    // ==========================================================
-    // Construtor
-    // ==========================================================
 
     public DashboardController(DashboardService service) {
         this.service = service;
     }
-
-    // ==========================================================
-    // Métodos Públicos
-    // ==========================================================
 
     /**
      * Retorna os indicadores do dashboard.
@@ -50,5 +31,4 @@ public class DashboardController {
     public DashboardResponse dashboard() {
         return service.gerarDashboard();
     }
-
 }

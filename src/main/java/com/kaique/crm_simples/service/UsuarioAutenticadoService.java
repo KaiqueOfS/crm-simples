@@ -1,5 +1,6 @@
 package com.kaique.crm_simples.service;
 
+import com.kaique.crm_simples.exception.UsuarioNaoEncontradoException;
 import com.kaique.crm_simples.model.Usuario;
 import com.kaique.crm_simples.repository.UsuarioRepository;
 import org.springframework.security.core.Authentication;
@@ -38,7 +39,6 @@ public class UsuarioAutenticadoService {
 
         // Busca o usuário correspondente no banco de dados
         return usuarioRepository.findByEmail(email)
-                .orElseThrow(() ->
-                        new RuntimeException("Usuário não encontrado."));
+                .orElseThrow(UsuarioNaoEncontradoException::new);
     }
 }

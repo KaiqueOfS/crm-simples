@@ -90,4 +90,16 @@ export function datasDaSemana(base: Date): Date[] {
   });
 }
 
+/** Nomes de mês por extenso, em português — usado pelas visões de Agenda. */
+export const MESES = [
+  "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+  "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
+];
+
+/** Dias da semana abreviados (domingo a sábado) — usado pelas visões de Agenda. */
+export const DIAS_ABREV = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+
+/** Dias da semana por extenso (domingo a sábado) — usado pela visão Semana. */
+export const DIAS_COMPLETO = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
+
 export { HOJE, doisDigitos };

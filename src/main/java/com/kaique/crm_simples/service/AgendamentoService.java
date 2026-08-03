@@ -4,7 +4,6 @@ import com.kaique.crm_simples.dto.AgendamentoRequest;
 import com.kaique.crm_simples.dto.AgendamentoResponse;
 import com.kaique.crm_simples.exception.AcessoNegadoException;
 import com.kaique.crm_simples.exception.AgendamentoNaoEncontradoException;
-import com.kaique.crm_simples.exception.ClienteNaoEncontradoException;
 import com.kaique.crm_simples.model.Agendamento;
 import com.kaique.crm_simples.model.Cliente;
 import com.kaique.crm_simples.model.Usuario;
@@ -12,7 +11,6 @@ import com.kaique.crm_simples.model.enums.LocalAtendimento;
 import com.kaique.crm_simples.model.enums.StatusAgendamento;
 import com.kaique.crm_simples.model.enums.TipoAtendimento;
 import com.kaique.crm_simples.repository.AgendamentoRepository;
-import com.kaique.crm_simples.repository.ClienteRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -35,17 +33,17 @@ public class AgendamentoService {
     private static final Logger log = LoggerFactory.getLogger(AgendamentoService.class);
 
     private final AgendamentoRepository repository;
-    private final ClienteRepository clienteRepository;
+    private final ClienteService clienteService;
     private final UsuarioAutenticadoService usuarioAutenticadoService;
     private final ConfiguracaoUsuarioService configuracaoUsuarioService;
 
     public AgendamentoService(
             AgendamentoRepository repository,
-            ClienteRepository clienteRepository,
+            ClienteService clienteService,
             UsuarioAutenticadoService usuarioAutenticadoService,
             ConfiguracaoUsuarioService configuracaoUsuarioService) {
         this.repository = repository;
-        this.clienteRepository = clienteRepository;
+        this.clienteService = clienteService;
         this.usuarioAutenticadoService = usuarioAutenticadoService;
         this.configuracaoUsuarioService = configuracaoUsuarioService;
     }
@@ -91,7 +89,7 @@ public class AgendamentoService {
      */
     public List<AgendamentoResponse> listarPorCliente(Long clienteId) {
         Usuario usuario = usuarioAutenticadoService.obterUsuarioLogado();
-        Cliente cliente = buscarClienteDoUsuario(clienteId, usuario);
+        Cliente cliente = clienteService.buscarClienteDoUsuario(clienteId, usuario);
         return repository.findByUsuarioAndClienteOrderByDataAscHoraAsc(usuario, cliente).stream()
                 .map(AgendamentoResponse::de)
                 .toList();
@@ -106,7 +104,7 @@ public class AgendamentoService {
      */
     public List<AgendamentoResponse> listarHistorico(Long clienteId) {
         Usuario usuario = usuarioAutenticadoService.obterUsuarioLogado();
-        Cliente cliente = buscarClienteDoUsuario(clienteId, usuario);
+        Cliente cliente = clienteService.buscarClienteDoUsuario(clienteId, usuario);
         return repository
                 .findByUsuarioAndClienteAndStatusOrderByDataDescHoraDesc(usuario, cliente, StatusAgendamento.CONCLUIDO)
                 .stream()
@@ -205,7 +203,7 @@ public class AgendamentoService {
      * Resolve e aplica o cliente vinculado ao agendamento, quando informado.
      *
      * Se "clienteId" vier no request, busca o Cliente garantindo que
-     * pertence ao mesmo usuário do agendamento (mesma checagem de
+     * pertence ao mesmo usuário do agendamento (via
      * ClienteService.buscarClienteDoUsuario) e sincroniza "pessoa" a partir
      * do nome dele. Sem "clienteId", mantém o comportamento anterior:
      * "pessoa" como texto livre, sem cliente vinculado.
@@ -217,26 +215,9 @@ public class AgendamentoService {
             return;
         }
 
-        Cliente cliente = buscarClienteDoUsuario(request.getClienteId(), usuario);
+        Cliente cliente = clienteService.buscarClienteDoUsuario(request.getClienteId(), usuario);
         agendamento.setCliente(cliente);
         agendamento.setPessoa(cliente.getNome());
-    }
-
-    /**
-     * Busca um cliente garantindo que pertence ao usuário informado.
-     * Mesma checagem de ClienteService.buscarClienteDoUsuario — reaproveitada
-     * aqui tanto para vincular um cliente a um agendamento quanto para listar
-     * os agendamentos de um cliente.
-     */
-    private Cliente buscarClienteDoUsuario(Long clienteId, Usuario usuario) {
-        Cliente cliente = clienteRepository.findById(clienteId)
-                .orElseThrow(() -> new ClienteNaoEncontradoException(clienteId));
-
-        if (!cliente.getUsuario().getId().equals(usuario.getId())) {
-            throw new AcessoNegadoException();
-        }
-
-        return cliente;
     }
 
     /**
@@ -261,7 +242,7 @@ public class AgendamentoService {
 
         // Impede acesso a agendamentos de outro usuário
         if (!agendamento.getUsuario().getId().equals(usuario.getId())) {
-            throw new AcessoNegadoException();
+            throw new AcessoNegadoException("agendamento");
         }
 
         return agendamento;

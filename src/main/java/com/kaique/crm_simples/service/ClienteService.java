@@ -172,14 +172,26 @@ public class ClienteService {
      * Lança exceção se não encontrar ou se for de outro usuário.
      */
     private Cliente buscarClienteDoUsuario(Long id) {
-        Usuario usuario = usuarioAutenticadoService.obterUsuarioLogado();
+        return buscarClienteDoUsuario(id, usuarioAutenticadoService.obterUsuarioLogado());
+    }
 
+    /**
+     * Busca um cliente garantindo que pertence ao usuário informado.
+     * Lança exceção se não encontrar ou se for de outro usuário.
+     *
+     * Público (diferente do overload acima) para ser reaproveitado por
+     * outros services que já resolveram o usuário autenticado e precisam
+     * validar posse de um cliente — ex.: AgendamentoService, ao vincular um
+     * cliente a um agendamento. Evita duplicar esta mesma checagem em cada
+     * service que referencia Cliente.
+     */
+    public Cliente buscarClienteDoUsuario(Long id, Usuario usuario) {
         Cliente cliente = repository.findById(id)
                 .orElseThrow(() -> new ClienteNaoEncontradoException(id));
 
         // Segurança: impede que um usuário acesse clientes de outro
         if (!cliente.getUsuario().getId().equals(usuario.getId())) {
-            throw new AcessoNegadoException();
+            throw new AcessoNegadoException("cliente");
         }
 
         return cliente;
