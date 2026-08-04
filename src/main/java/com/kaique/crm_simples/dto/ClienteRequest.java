@@ -37,7 +37,8 @@ public class ClienteRequest {
     @Email(message = "E-mail inválido")
     private String email;
 
-    @Size(max = 500, message = "Observações devem ter no máximo 500 caracteres")
+    // Mesmo limite da coluna VARCHAR(255) no banco, ver V1__init.sql
+    @Size(max = 255, message = "Observações devem ter no máximo 255 caracteres")
     private String observacoes;
 
     // Mesmo padrão da entidade: recém-criado começa em NOVO se não informado.

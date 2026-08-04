@@ -102,7 +102,14 @@ export function ClienteCombobox({
         </button>
       </PopoverTrigger>
 
-      <PopoverContent className="p-0" onOpenAutoFocus={(e) => e.preventDefault()}>
+      {/* pointer-events-auto: o Dialog do formulário (modal) aplica
+          pointer-events:none no <body> enquanto está aberto, restaurando
+          "auto" só no próprio conteúdo dele. Este Popover é um overlay à
+          parte, também portado para o body — sem essa classe, ele herda o
+          bloqueio do Dialog: fica visível por cima, mas o clique atravessa
+          para o campo que estiver por baixo (ex.: Data), sem selecionar
+          nenhum cliente. */}
+      <PopoverContent className="p-0 pointer-events-auto" onOpenAutoFocus={(e) => e.preventDefault()}>
         <div className="relative border-b border-border p-2">
           <Search className="pointer-events-none absolute left-5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" strokeWidth={1.75} />
           <input

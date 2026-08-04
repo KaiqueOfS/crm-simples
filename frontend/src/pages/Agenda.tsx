@@ -9,7 +9,7 @@ import { AgendaItem, compromissosDoDia, type AcoesCompromisso } from "@/componen
 import { VisaoSemana } from "@/components/agenda/VisaoSemana";
 import { VisaoMes } from "@/components/agenda/VisaoMes";
 import { CompromissoDialog } from "@/components/agenda/CompromissoDialog";
-import { HOJE, HOJE_CHAVE, MESES, dataPorExtenso, datasDaSemana, paraChave } from "@/lib/datas";
+import { hoje, hojeChave, MESES, dataPorExtenso, datasDaSemana, paraChave } from "@/lib/datas";
 import { agendamentosApi, type Agendamento, type AgendamentoInput } from "@/lib/api";
 
 /**
@@ -36,8 +36,8 @@ function VisaoHoje({
   aoExcluir,
   aoConcluir,
 }: AcoesCompromisso & { compromissos: Agendamento[] }) {
-  const doDia = compromissosDoDia(compromissos, HOJE_CHAVE);
-  const rotulo = dataPorExtenso(HOJE);
+  const doDia = compromissosDoDia(compromissos, hojeChave());
+  const rotulo = dataPorExtenso(hoje());
 
   return (
     <div>
@@ -76,10 +76,10 @@ export default function Agenda() {
 
   const [visao, setVisao] = useState<Visualizacao>("hoje");
   const [selecionadoId, setSelecionadoId] = useState<number | null>(null);
-  const [dataBase, setDataBase] = useState(new Date(HOJE));
-  const [anoCalendario, setAnoCalendario] = useState(HOJE.getFullYear());
-  const [mesCalendario, setMesCalendario] = useState(HOJE.getMonth());
-  const [dataSelecionada, setDataSelecionada] = useState(HOJE_CHAVE);
+  const [dataBase, setDataBase] = useState(hoje());
+  const [anoCalendario, setAnoCalendario] = useState(hoje().getFullYear());
+  const [mesCalendario, setMesCalendario] = useState(hoje().getMonth());
+  const [dataSelecionada, setDataSelecionada] = useState(hojeChave());
 
   const [formAberto, setFormAberto] = useState(false);
   const [compromissoEmEdicao, setCompromissoEmEdicao] = useState<Agendamento | null>(null);
@@ -153,17 +153,17 @@ export default function Agenda() {
   }
 
   function irParaHoje() {
-    setDataBase(new Date(HOJE));
-    setAnoCalendario(HOJE.getFullYear());
-    setMesCalendario(HOJE.getMonth());
-    setDataSelecionada(HOJE_CHAVE);
+    setDataBase(hoje());
+    setAnoCalendario(hoje().getFullYear());
+    setMesCalendario(hoje().getMonth());
+    setDataSelecionada(hojeChave());
     setVisao("hoje");
     setSelecionadoId(null);
   }
 
   function rotuloPeriodo(): string {
     if (visao === "hoje") {
-      return HOJE.toLocaleDateString("pt-BR", { day: "numeric", month: "long", year: "numeric" });
+      return hoje().toLocaleDateString("pt-BR", { day: "numeric", month: "long", year: "numeric" });
     }
     if (visao === "semana") {
       const semana = datasDaSemana(dataBase);
@@ -180,7 +180,7 @@ export default function Agenda() {
   function dataPadraoParaNovoCompromisso(): string {
     if (visao === "mes") return dataSelecionada;
     if (visao === "semana") return paraChave(dataBase);
-    return HOJE_CHAVE;
+    return hojeChave();
   }
 
   function abrirCriacao() {

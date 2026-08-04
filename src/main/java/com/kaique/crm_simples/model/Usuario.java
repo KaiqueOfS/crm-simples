@@ -38,7 +38,7 @@ public class Usuario {
     // WRITE_ONLY = aceita na entrada (cadastro/login) mas NUNCA retorna na resposta JSON.
     // Isso impede que o hash vaze para o cliente mesmo que o token seja interceptado.
     @NotBlank(message = "Senha é obrigatória")
-    @Size(min = 6, message = "Senha deve ter no mínimo 6 caracteres")
+    @Size(min = 8, message = "Senha deve ter no mínimo 8 caracteres")
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String senha;
 

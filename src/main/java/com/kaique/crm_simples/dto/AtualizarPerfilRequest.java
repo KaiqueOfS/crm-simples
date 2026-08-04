@@ -18,7 +18,13 @@ public class AtualizarPerfilRequest {
     @Pattern(regexp = "^[\\p{L}\\s'-]+$", message = "Nome deve conter apenas letras")
     private String nome;
 
-    // Nova senha (opcional — se vier vazia ou nula, não atualiza)
+    // Nova senha (opcional — se vier vazia ou nula, não atualiza).
+    // Quando preenchida, segue a mesma regra do cadastro (CadastroUsuarioRequest):
+    // mínimo 8 caracteres, com letra e número. @Pattern não dispara em
+    // string vazia/nula, então o campo continua opcional.
+    @Pattern(
+            regexp = "^$|^(?=.*[A-Za-z])(?=.*\\d).{8,}$",
+            message = "Senha deve ter no mínimo 8 caracteres, incluindo letras e números")
     private String novaSenha;
 
     // Confirmação da nova senha — validada no service

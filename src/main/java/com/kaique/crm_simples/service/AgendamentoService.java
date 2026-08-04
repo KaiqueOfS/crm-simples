@@ -4,6 +4,7 @@ import com.kaique.crm_simples.dto.AgendamentoRequest;
 import com.kaique.crm_simples.dto.AgendamentoResponse;
 import com.kaique.crm_simples.exception.AcessoNegadoException;
 import com.kaique.crm_simples.exception.AgendamentoNaoEncontradoException;
+import com.kaique.crm_simples.exception.LocalAtendimentoObrigatorioException;
 import com.kaique.crm_simples.model.Agendamento;
 import com.kaique.crm_simples.model.Cliente;
 import com.kaique.crm_simples.model.Usuario;
@@ -194,7 +195,7 @@ public class AgendamentoService {
 
         // AMBOS, ou usuário sem configuração salva ainda: precisa vir do request.
         if (informado == null) {
-            throw new RuntimeException("Selecione o local de atendimento.");
+            throw new LocalAtendimentoObrigatorioException();
         }
         return informado;
     }

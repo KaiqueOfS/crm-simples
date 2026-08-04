@@ -4,8 +4,6 @@
  * evitar que as duas fiquem divergindo com o tempo.
  */
 
-const HOJE = new Date();
-
 function doisDigitos(n: number): string {
   return String(n).padStart(2, "0");
 }
@@ -15,11 +13,25 @@ export function paraChave(data: Date): string {
   return `${data.getFullYear()}-${doisDigitos(data.getMonth() + 1)}-${doisDigitos(data.getDate())}`;
 }
 
-export const HOJE_CHAVE = paraChave(HOJE);
+/**
+ * Data/hora atual, sob demanda — nunca cacheada. Antes existia uma
+ * constante `HOJE` calculada uma única vez no carregamento do módulo, que
+ * ficava presa no dia em que a aba foi aberta (bug real se a aba
+ * atravessasse a meia-noite). Toda a Agenda/Hoje usa isto agora, em vez
+ * de guardar o valor.
+ */
+export function hoje(): Date {
+  return new Date();
+}
+
+/** Chave YYYY-MM-DD do dia atual, sob demanda (ver hoje()). */
+export function hojeChave(): string {
+  return paraChave(hoje());
+}
 
 /** Retorna a chave de uma data N dias a partir de hoje (aceita negativos). */
 export function chaveComOffset(dias: number): string {
-  const data = new Date(HOJE);
+  const data = hoje();
   data.setDate(data.getDate() + dias);
   return paraChave(data);
 }
@@ -72,12 +84,12 @@ export function formatarHora(hora: string): string {
 
 /** true se a data já passou (fim do dia). */
 export function estaAtrasado(chave: string): boolean {
-  return new Date(`${chave}T23:59:59`) < HOJE;
+  return new Date(`${chave}T23:59:59`) < hoje();
 }
 
 /** true se a data é exatamente hoje. */
 export function eHoje(chave: string): boolean {
-  return chave === HOJE_CHAVE;
+  return chave === hojeChave();
 }
 
 /** Retorna as datas da semana (domingo a sábado) que contém a data base. */
@@ -102,4 +114,4 @@ export const DIAS_ABREV = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 /** Dias da semana por extenso (domingo a sábado) — usado pela visão Semana. */
 export const DIAS_COMPLETO = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
 
-export { HOJE, doisDigitos };
+export { doisDigitos };

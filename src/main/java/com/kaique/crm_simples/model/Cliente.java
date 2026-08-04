@@ -39,8 +39,9 @@ public class Cliente {
     @Email(message = "E-mail inválido")
     private String email;
 
-    // Observações livres sobre o cliente (máximo 500 caracteres)
-    @Size(max = 500, message = "Observações devem ter no máximo 500 caracteres")
+    // Observações livres sobre o cliente (máximo 255 caracteres — mesmo
+    // limite da coluna VARCHAR(255) no banco, ver V1__init.sql)
+    @Size(max = 255, message = "Observações devem ter no máximo 255 caracteres")
     private String observacoes;
 
     // Etapa atual do cliente no funil de vendas

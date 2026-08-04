@@ -111,7 +111,7 @@ export function ClienteFormDialog({
               <Label htmlFor="cliente-observacoes">Observações</Label>
               <Textarea
                 id="cliente-observacoes"
-                maxLength={500}
+                maxLength={255}
                 rows={3}
                 value={valores.observacoes}
                 onChange={(e) => setValores((v) => ({ ...v, observacoes: e.target.value }))}

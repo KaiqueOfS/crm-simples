@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { StatCard } from "@/components/ui/stat-card";
 import { CATEGORIA_CFG, LocalAtendimentoBadge, STATUS_AGENDAMENTO_CFG } from "@/components/agenda/AgendaItem";
 import { CompromissoDialog } from "@/components/agenda/CompromissoDialog";
-import { HOJE_CHAVE, dataPorExtenso, formatarHora } from "@/lib/datas";
+import { hojeChave, dataPorExtenso, formatarHora } from "@/lib/datas";
 import { agendamentosApi, type AgendamentoInput } from "@/lib/api";
 import { useMeuDia } from "@/hooks/useMeuDia";
 import { useAbrirWhatsappDoCliente } from "@/hooks/useAbrirWhatsappDoCliente";
@@ -250,7 +250,7 @@ export default function Hoje() {
       <CompromissoDialog
         aberto={formAberto}
         compromisso={proximo}
-        dataPadrao={HOJE_CHAVE}
+        dataPadrao={hojeChave()}
         aoFechar={() => setFormAberto(false)}
         aoSalvar={salvarReagendamento}
       />

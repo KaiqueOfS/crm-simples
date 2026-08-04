@@ -3,6 +3,8 @@ package com.kaique.crm_simples.service;
 import com.kaique.crm_simples.dto.AtualizarPerfilRequest;
 import com.kaique.crm_simples.dto.CadastroUsuarioRequest;
 import com.kaique.crm_simples.exception.EmailJaCadastradoException;
+import com.kaique.crm_simples.exception.NomeInvalidoException;
+import com.kaique.crm_simples.exception.SenhaInvalidaException;
 import com.kaique.crm_simples.exception.SenhasNaoCoincidemException;
 import com.kaique.crm_simples.exception.UsuarioNaoEncontradoException;
 import com.kaique.crm_simples.model.Usuario;
@@ -85,11 +87,11 @@ public class UsuarioService {
     private void validarNome(String nome) {
 
         if (!NOME_CARACTERES_VALIDOS.matcher(nome).matches()) {
-            throw new RuntimeException("O nome deve conter apenas letras.");
+            throw new NomeInvalidoException("O nome deve conter apenas letras.");
         }
 
         if (!NOME_COMPLETO.matcher(nome).matches()) {
-            throw new RuntimeException("Informe seu nome completo (nome e sobrenome).");
+            throw new NomeInvalidoException("Informe seu nome completo (nome e sobrenome).");
         }
     }
 
@@ -114,13 +116,7 @@ public class UsuarioService {
             throw new EmailJaCadastradoException(usuario.getEmail());
         }
 
-        // Senha em bytes acima do limite do BCrypt: valida ANTES de
-        // criptografar para nunca deixar a exceção crua do BCrypt
-        // ("password cannot be more than 72 bytes", em inglês) vazar
-        // para o cliente.
-        if (usuario.getSenha().getBytes(StandardCharsets.UTF_8).length > SENHA_MAX_BYTES) {
-            throw new RuntimeException("Senha não pode ter mais que 72 bytes.");
-        }
+        validarTamanhoSenha(usuario.getSenha());
 
         // Criptografa a senha antes de salvar no banco
         usuario.alterarSenha(
@@ -136,6 +132,18 @@ public class UsuarioService {
             // (nome de tabela, coluna e constraint) em vez da mensagem
             // de negócio já usada no caso não concorrente.
             throw new EmailJaCadastradoException(usuario.getEmail());
+        }
+    }
+
+    /**
+     * Valida o tamanho da senha em bytes ANTES de criptografar, para nunca
+     * deixar a exceção crua do BCrypt ("password cannot be more than 72
+     * bytes", em inglês) vazar para o cliente. Usado tanto no cadastro
+     * quanto na troca de senha do perfil.
+     */
+    private void validarTamanhoSenha(String senha) {
+        if (senha.getBytes(StandardCharsets.UTF_8).length > SENHA_MAX_BYTES) {
+            throw new SenhaInvalidaException("Senha não pode ter mais que 72 bytes.");
         }
     }
 
@@ -184,10 +192,7 @@ public class UsuarioService {
                 throw new SenhasNaoCoincidemException();
             }
 
-            // Valida tamanho mínimo da nova senha
-            if (request.getNovaSenha().length() < 6) {
-                throw new RuntimeException("Senha deve ter no mínimo 6 caracteres.");
-            }
+            validarTamanhoSenha(request.getNovaSenha());
 
             // Criptografa e salva a nova senha
             usuario.alterarSenha(

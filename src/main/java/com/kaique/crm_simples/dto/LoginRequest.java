@@ -10,7 +10,7 @@ public class LoginRequest {
     }
 
     public void setEmail(String email) {
-        this.email = email;
+        this.email = email == null ? null : email.trim().toLowerCase();
     }
 
     public String getSenha() {

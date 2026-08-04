@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 import { AgendaItem, CATEGORIA_CFG, compromissosDoDia, type AcoesCompromisso } from "@/components/agenda/AgendaItem";
-import { HOJE_CHAVE, MESES, DIAS_ABREV, DIAS_COMPLETO, datasDaSemana, paraChave } from "@/lib/datas";
+import { hojeChave, MESES, DIAS_ABREV, DIAS_COMPLETO, datasDaSemana, paraChave } from "@/lib/datas";
 import type { Agendamento } from "@/lib/api";
 
 /** Visão "Semana" da Agenda: tira de dias + compromissos agrupados por dia. */
@@ -15,7 +15,7 @@ export function VisaoSemana({
       <div className="mb-5 grid grid-cols-7 gap-1">
         {semana.map((dia, indice) => {
           const chave = paraChave(dia);
-          const ehHoje = chave === HOJE_CHAVE;
+          const ehHoje = chave === hojeChave();
           const doDia = compromissosDoDia(compromissos, chave);
           return (
             <div key={indice} className="flex flex-col items-center gap-1">
@@ -43,7 +43,7 @@ export function VisaoSemana({
           const chave = paraChave(dia);
           const doDia = compromissosDoDia(compromissos, chave);
           if (doDia.length === 0) return null;
-          const ehHoje = chave === HOJE_CHAVE;
+          const ehHoje = chave === hojeChave();
           return (
             <div key={indice}>
               <div className="mb-2 flex items-center gap-2">

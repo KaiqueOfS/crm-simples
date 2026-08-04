@@ -9,6 +9,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 
+// Mesma regra do backend (AtualizarPerfilRequest/CadastroUsuarioRequest):
+// mínimo de 8 caracteres, com pelo menos 1 letra e 1 número.
+const SENHA_VALIDA = /^(?=.*[A-Za-z])(?=.*\d).{8,}$/;
+
 /**
  * Dados da conta: nome, e-mail (fixo) e troca de senha opcional.
  * O logout e a navegação já ficam no AppShell.
@@ -43,8 +47,8 @@ export default function Perfil() {
   async function salvar(evento: React.FormEvent) {
     evento.preventDefault();
 
-    if (novaSenha && novaSenha.length < 6) {
-      toast.error("A nova senha deve ter pelo menos 6 caracteres.");
+    if (novaSenha && !SENHA_VALIDA.test(novaSenha)) {
+      toast.error("A nova senha deve ter no mínimo 8 caracteres, incluindo letras e números.");
       return;
     }
     if (novaSenha !== confirmarSenha) {
@@ -113,11 +117,11 @@ export default function Perfil() {
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-1">
                     <Label htmlFor="nova-senha">Nova senha</Label>
-                    <Input id="nova-senha" type="password" minLength={6} autoComplete="new-password" value={novaSenha} onChange={(e) => setNovaSenha(e.target.value)} />
+                    <Input id="nova-senha" type="password" minLength={8} autoComplete="new-password" value={novaSenha} onChange={(e) => setNovaSenha(e.target.value)} />
                   </div>
                   <div className="space-y-1">
                     <Label htmlFor="confirmar-senha">Confirmar nova senha</Label>
-                    <Input id="confirmar-senha" type="password" minLength={6} autoComplete="new-password" value={confirmarSenha} onChange={(e) => setConfirmarSenha(e.target.value)} />
+                    <Input id="confirmar-senha" type="password" minLength={8} autoComplete="new-password" value={confirmarSenha} onChange={(e) => setConfirmarSenha(e.target.value)} />
                   </div>
                 </div>
               </div>

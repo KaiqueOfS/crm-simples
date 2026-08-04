@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { Building2, MapPin } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogBody, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -90,12 +91,16 @@ export function CompromissoDialog({
     clientesApi
       .list({ tamanho: 100 })
       .then((resposta) => setClientes(resposta.conteudo))
+      .catch((err) => toast.error(err instanceof Error ? err.message : "Não foi possível carregar os clientes."))
       .finally(() => setCarregandoClientes(false));
 
     configuracaoUsuarioApi
       .get()
       .then((configuracao) => setMostrarSeletorLocal(configuracao.tipoAtendimento === "AMBOS"))
-      .catch(() => setMostrarSeletorLocal(false));
+      .catch((err) => {
+        toast.error(err instanceof Error ? err.message : "Não foi possível carregar a configuração de atendimento.");
+        setMostrarSeletorLocal(false);
+      });
   }, [aberto]);
 
   useEffect(() => {

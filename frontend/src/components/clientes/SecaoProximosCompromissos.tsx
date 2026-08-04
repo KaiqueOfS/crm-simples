@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { CATEGORIA_CFG } from "@/components/agenda/AgendaItem";
-import { HOJE_CHAVE, formatarDataCurta, formatarHora } from "@/lib/datas";
+import { hojeChave, formatarDataCurta, formatarHora } from "@/lib/datas";
 import { agendamentosApi, type Agendamento } from "@/lib/api";
 import { linkWhatsapp } from "@/lib/utils/whatsapp";
 
@@ -42,7 +42,7 @@ export function SecaoProximosCompromissos({
       .then((lista) => {
         if (cancelado) return;
         // Concluídos ficam para uma futura seção de Histórico, não aqui.
-        setCompromissos(lista.filter((c) => c.data >= HOJE_CHAVE && c.status === "PENDENTE"));
+        setCompromissos(lista.filter((c) => c.data >= hojeChave() && c.status === "PENDENTE"));
       })
       .catch((err) => {
         if (cancelado) return;

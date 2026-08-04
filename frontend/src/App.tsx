@@ -22,12 +22,17 @@ import OnboardingConfiguracao from "@/pages/OnboardingConfiguracao";
  * para saber `onboardingConcluido` — se ainda não concluiu, redireciona
  * para /onboarding antes de mostrar o AppShell.
  *
- * Falha ao buscar o perfil não deve travar o usuário fora do app: nesse
- * caso deixamos passar (o próprio conteúdo da página tratará o erro,
- * como já acontece hoje se a API estiver fora do ar).
+ * Falha ao buscar o perfil não deve travar o usuário fora do app quando
+ * é só a API fora do ar: nesse caso deixamos passar (o próprio conteúdo
+ * da página tratará o erro). Mas quando a falha é 401 (token expirado/
+ * inválido), `api()` já limpou o token antes de lançar o erro — nesse
+ * caso não faz sentido "deixar passar": não há AppShell montado ainda
+ * para escutar SESSION_EXPIRED_EVENT, então precisamos redirecionar
+ * para /auth aqui mesmo, em vez de renderizar a página protegida sem
+ * token válido.
  */
 function GateOnboarding({ children }: { children: React.ReactNode }) {
-  const [status, setStatus] = useState<"carregando" | "ok" | "pendente">("carregando");
+  const [status, setStatus] = useState<"carregando" | "ok" | "pendente" | "nao-autenticado">("carregando");
 
   useEffect(() => {
     let ativo = true;
@@ -37,7 +42,8 @@ function GateOnboarding({ children }: { children: React.ReactNode }) {
         if (ativo) setStatus(usuario.onboardingConcluido ? "ok" : "pendente");
       })
       .catch(() => {
-        if (ativo) setStatus("ok");
+        if (!ativo) return;
+        setStatus(getToken() ? "ok" : "nao-autenticado");
       });
     return () => {
       ativo = false;
@@ -45,6 +51,7 @@ function GateOnboarding({ children }: { children: React.ReactNode }) {
   }, []);
 
   if (status === "carregando") return null;
+  if (status === "nao-autenticado") return <Navigate to="/auth" replace />;
   if (status === "pendente") return <Navigate to="/onboarding" replace />;
   return <AppShell>{children}</AppShell>;
 }

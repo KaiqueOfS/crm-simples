@@ -3,10 +3,9 @@ package com.kaique.crm_simples.controller;
 import com.kaique.crm_simples.dto.AtualizarPerfilRequest;
 import com.kaique.crm_simples.dto.CadastroUsuarioRequest;
 import com.kaique.crm_simples.dto.UsuarioResponse;
+import com.kaique.crm_simples.service.UsuarioAutenticadoService;
 import com.kaique.crm_simples.service.UsuarioService;
 import jakarta.validation.Valid;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 /**
@@ -20,9 +19,11 @@ import org.springframework.web.bind.annotation.*;
 public class UsuarioController {
 
     private final UsuarioService service;
+    private final UsuarioAutenticadoService usuarioAutenticadoService;
 
-    public UsuarioController(UsuarioService service) {
+    public UsuarioController(UsuarioService service, UsuarioAutenticadoService usuarioAutenticadoService) {
         this.service = service;
+        this.usuarioAutenticadoService = usuarioAutenticadoService;
     }
 
     /**
@@ -41,17 +42,11 @@ public class UsuarioController {
     /**
      * Retorna os dados do perfil do usuário autenticado.
      *
-     * Usamos o e-mail do token JWT para buscar o usuário —
-     * assim cada usuário só consegue ver o próprio perfil.
-     *
      * @return dados do usuário autenticado.
      */
     @GetMapping("/perfil")
     public UsuarioResponse perfil() {
-
-        // Obtém o e-mail do token JWT via SecurityContext
-        String email = getEmailAutenticado();
-        return UsuarioResponse.de(service.buscarPorEmail(email));
+        return UsuarioResponse.de(usuarioAutenticadoService.obterUsuarioLogado());
     }
 
     /**
@@ -66,20 +61,7 @@ public class UsuarioController {
     @PutMapping("/perfil")
     public UsuarioResponse atualizarPerfil(@Valid @RequestBody AtualizarPerfilRequest request) {
 
-        String email = getEmailAutenticado();
+        String email = usuarioAutenticadoService.obterUsuarioLogado().getEmail();
         return UsuarioResponse.de(service.atualizarPerfil(email, request));
-    }
-
-    /**
-     * Obtém o e-mail do usuário autenticado a partir do token JWT.
-     *
-     * O Spring Security armazena o e-mail no SecurityContext
-     * após validar o token no JwtFilter.
-     *
-     * @return e-mail do usuário autenticado.
-     */
-    private String getEmailAutenticado() {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        return auth.getName();
     }
 }

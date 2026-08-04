@@ -2,8 +2,10 @@ package com.kaique.crm_simples.dto;
 
 import com.kaique.crm_simples.model.enums.LocalAtendimento;
 import com.kaique.crm_simples.model.enums.StatusAgendamento;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 import java.time.LocalDate;
@@ -21,6 +23,9 @@ public class AgendamentoRequest {
     @Size(max = 255, message = "Título deve ter no máximo 255 caracteres")
     private String titulo;
 
+    // Mesmo limite da coluna VARCHAR(255) no banco, ver V1__init.sql
+    // (mesmo padrão de "titulo", que já tinha esse @Size).
+    @Size(max = 255, message = "Nome da pessoa deve ter no máximo 255 caracteres")
     private String pessoa;
 
     // Opcional nesta fase: quando informado, o service resolve o Cliente
@@ -35,8 +40,16 @@ public class AgendamentoRequest {
     @NotNull(message = "Hora é obrigatória")
     private LocalTime hora;
 
-    // Mesmo padrão da entidade: mesmos defaults se não informado.
+    // Mesmo padrão da entidade: mesmos defaults se não informado. Restrito
+    // aos valores que o frontend conhece (ver CATEGORIA_CFG em AgendaItem.tsx)
+    // — uma categoria fora dessa lista quebraria a busca em CATEGORIA_CFG[categoria]
+    // no frontend (chave inexistente, undefined.propriedade).
+    @Pattern(
+            regexp = "^(atendimento|retorno|orcamento|reuniao|urgente|outro)$",
+            message = "Categoria inválida")
     private String categoria = "atendimento";
+
+    @Min(value = 0, message = "Lembrete não pode ser negativo")
     private Integer lembrete = 0;
 
     // Opcional: ausente na criação, o service usa PENDENTE. Na atualização,

@@ -65,7 +65,9 @@ export default function Clientes() {
   }, [busca]);
 
   useEffect(() => {
-    void carregarClientes();
+    let cancelado = false;
+    carregarClientes(() => cancelado);
+    return () => { cancelado = true; };
   }, [buscaEfetiva, filtroStatus]);
 
   // Deep-link vindo do Meu Dia (?clienteId=X): busca o cliente direto pela
@@ -92,7 +94,7 @@ export default function Clientes() {
       });
   }, [searchParams, setSearchParams]);
 
-  async function carregarClientes() {
+  async function carregarClientes(isCancelado: () => boolean = () => false) {
     setCarregando(true);
     setErro(null);
     try {
@@ -101,12 +103,14 @@ export default function Clientes() {
         termo: buscaEfetiva || undefined,
         status: filtroStatus === "TODOS" ? undefined : filtroStatus,
       });
+      if (isCancelado()) return;
       setClientes(resposta.conteudo);
       setTotalClientes(resposta.totalElementos);
     } catch (err) {
+      if (isCancelado()) return;
       setErro(err instanceof Error ? err.message : "Não foi possível carregar os clientes.");
     } finally {
-      setCarregando(false);
+      if (!isCancelado()) setCarregando(false);
     }
   }
 

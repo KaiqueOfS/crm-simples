@@ -14,21 +14,24 @@ import org.springframework.data.repository.query.Param;
  */
 public interface ClienteRepository extends JpaRepository<Cliente, Long> {
 
-    // Busca todos os clientes de um usuário
-    Page<Cliente> findByUsuario(Usuario usuario, Pageable pageable);
-
-    Page<Cliente> findByUsuarioAndStatus(Usuario usuario, StatusLead status, Pageable pageable);
-
+    // Busca clientes de um usuário, com termo e status opcionais (NULL =
+    // não filtra por aquele critério). Uma única query cobre os cinco
+    // cenários da tela de Clientes: sem filtro, só termo, só status, ou
+    // os dois juntos — evita ter que combinar métodos derivados diferentes
+    // por fora (o que impedia termo+status de serem usados ao mesmo tempo).
     @Query("""
             SELECT c FROM Cliente c
             WHERE c.usuario = :usuario
-              AND (LOWER(c.nome) LIKE LOWER(CONCAT('%', :termo, '%'))
+              AND (:status IS NULL OR c.status = :status)
+              AND (:termo IS NULL
+                   OR LOWER(c.nome) LIKE LOWER(CONCAT('%', :termo, '%'))
                    OR LOWER(COALESCE(c.email, '')) LIKE LOWER(CONCAT('%', :termo, '%'))
                    OR COALESCE(c.telefone, '') LIKE CONCAT('%', :termo, '%'))
             """)
-    Page<Cliente> buscarPorUsuarioETermo(
+    Page<Cliente> buscarPorUsuarioFiltrado(
             @Param("usuario") Usuario usuario,
             @Param("termo") String termo,
+            @Param("status") StatusLead status,
             Pageable pageable);
 
     /**

@@ -1,7 +1,7 @@
 import { CalendarDays } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AgendaItem, CATEGORIA_CFG, compromissosDoDia, type AcoesCompromisso } from "@/components/agenda/AgendaItem";
-import { HOJE_CHAVE, DIAS_ABREV, doisDigitos, paraDataLocal } from "@/lib/datas";
+import { hojeChave, DIAS_ABREV, doisDigitos, paraDataLocal } from "@/lib/datas";
 import type { Agendamento } from "@/lib/api";
 
 /** Visão "Mês" da Agenda: grade de calendário + detalhe do dia selecionado. */
@@ -44,7 +44,7 @@ export function VisaoMes({
             if (celula.foraDoMes) return <div key={indice} className="aspect-square" />;
             const chave = `${ano}-${doisDigitos(mes + 1)}-${doisDigitos(celula.dia)}`;
             const doDia = compromissosDoDia(compromissos, chave);
-            const ehHoje = chave === HOJE_CHAVE;
+            const ehHoje = chave === hojeChave();
             const estaSelecionado = chave === dataSelecionada;
             return (
               <button

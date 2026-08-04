@@ -2,6 +2,7 @@ package com.kaique.crm_simples.exception;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -174,6 +175,65 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(Map.of("erro", ex.getMessage()));
+    }
+
+    /**
+     * Trata criação de agendamento sem local de atendimento informado,
+     * quando a conta exige essa escolha (tipo de atendimento AMBOS).
+     * HTTP 400 Bad Request.
+     */
+    @ExceptionHandler(LocalAtendimentoObrigatorioException.class)
+    public ResponseEntity<Map<String, String>> tratarLocalAtendimentoObrigatorio(
+            LocalAtendimentoObrigatorioException ex) {
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(Map.of("erro", ex.getMessage()));
+    }
+
+    /**
+     * Trata nome inválido (caracteres não permitidos ou nome incompleto)
+     * no cadastro/edição de cliente.
+     * HTTP 400 Bad Request.
+     */
+    @ExceptionHandler(NomeInvalidoException.class)
+    public ResponseEntity<Map<String, String>> tratarNomeInvalido(
+            NomeInvalidoException ex) {
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(Map.of("erro", ex.getMessage()));
+    }
+
+    /**
+     * Trata senha inválida (ex.: tamanho acima do limite do BCrypt) no
+     * cadastro ou na troca de senha do perfil.
+     * HTTP 400 Bad Request.
+     */
+    @ExceptionHandler(SenhaInvalidaException.class)
+    public ResponseEntity<Map<String, String>> tratarSenhaInvalida(
+            SenhaInvalidaException ex) {
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(Map.of("erro", ex.getMessage()));
+    }
+
+    /**
+     * Trata violação de integridade do banco (constraint, truncamento,
+     * chave duplicada não coberta por um handler específico, etc.).
+     * HTTP 500 Internal Server Error.
+     *
+     * IMPORTANTE: DataIntegrityViolationException é uma RuntimeException,
+     * então precisa de handler próprio aqui em cima — senão cairia no
+     * handler genérico de RuntimeException logo abaixo, que devolve a
+     * mensagem crua do driver JDBC/Hibernate (nome de tabela/coluna/
+     * constraint) como erro 400 para o cliente.
+     */
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<Map<String, String>> tratarViolacaoIntegridade(
+            DataIntegrityViolationException ex) {
+
+        log.error("Violação de integridade no banco de dados", ex);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("erro", "Não foi possível salvar os dados. Tente novamente."));
     }
 
     /**

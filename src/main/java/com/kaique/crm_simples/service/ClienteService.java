@@ -6,6 +6,7 @@ import com.kaique.crm_simples.dto.StatusLeadRequest;
 import com.kaique.crm_simples.dto.PaginaResponse;
 import com.kaique.crm_simples.exception.AcessoNegadoException;
 import com.kaique.crm_simples.exception.ClienteNaoEncontradoException;
+import com.kaique.crm_simples.exception.NomeInvalidoException;
 import com.kaique.crm_simples.model.Cliente;
 import com.kaique.crm_simples.model.StatusLead;
 import com.kaique.crm_simples.model.Usuario;
@@ -53,20 +54,15 @@ public class ClienteService {
     }
 
     /**
-     * Lista todos os clientes do usuário autenticado.
+     * Lista os clientes do usuário autenticado, com termo e status
+     * opcionais e combináveis entre si (ver ClienteRepository.buscarPorUsuarioFiltrado).
      */
     public PaginaResponse<ClienteResponse> listarTodos(int pagina, int tamanho, String termo, StatusLead status) {
         Usuario usuario = usuarioAutenticadoService.obterUsuarioLogado();
         Pageable pageable = PageRequest.of(pagina, tamanho, Sort.by("nome").ascending());
 
-        Page<Cliente> resultado;
-        if (status != null) {
-            resultado = repository.findByUsuarioAndStatus(usuario, status, pageable);
-        } else if (termo != null && !termo.isBlank()) {
-            resultado = repository.buscarPorUsuarioETermo(usuario, termo.trim(), pageable);
-        } else {
-            resultado = repository.findByUsuario(usuario, pageable);
-        }
+        String termoFiltro = (termo != null && !termo.isBlank()) ? termo.trim() : null;
+        Page<Cliente> resultado = repository.buscarPorUsuarioFiltrado(usuario, termoFiltro, status, pageable);
 
         return PaginaResponse.de(resultado.map(ClienteResponse::de));
     }
@@ -159,11 +155,11 @@ public class ClienteService {
     private void validarNome(String nome) {
 
         if (!NOME_CARACTERES_VALIDOS.matcher(nome).matches()) {
-            throw new RuntimeException("Nome deve conter apenas letras.");
+            throw new NomeInvalidoException("Nome deve conter apenas letras.");
         }
 
         if (!NOME_COMPLETO.matcher(nome).matches()) {
-            throw new RuntimeException("Informe o nome completo.");
+            throw new NomeInvalidoException("Informe o nome completo.");
         }
     }
 
