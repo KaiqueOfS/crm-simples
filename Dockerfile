@@ -56,7 +56,14 @@ RUN ./mvnw -B -q -DskipTests package
 FROM eclipse-temurin:21-jre-alpine AS runtime
 WORKDIR /app
 
+# Roda como usuário não-root: se a aplicação for comprometida (RCE em
+# alguma dependência, por exemplo), o processo não tem privilégio de
+# root dentro do container.
+RUN addgroup -S orbis && adduser -S orbis -G orbis
+
 COPY --from=backend-build /app/target/crm-simples-*.jar app.jar
+
+USER orbis
 
 EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "app.jar"]
