@@ -11,20 +11,19 @@
 	<groupId>com.kaique</groupId>
 	<artifactId>crm-simples</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name/>
-	<description/>
-	<url/>
-	<licenses>
-		<license/>
-	</licenses>
+	<name>orbis-crm</name>
+	<description>Orbis CRM — CRM simples para microempreendedores e prestadores de serviço organizarem clientes, agenda e funil de vendas, com autenticação JWT e isolamento de dados por conta.</description>
+	<url>https://github.com/KaiqueOfS/crm-simples</url>
 	<developers>
-		<developer/>
+		<developer>
+			<name>Kaique Oliveira</name>
+			<url>https://github.com/KaiqueOfS</url>
+		</developer>
 	</developers>
 	<scm>
-		<connection/>
-		<developerConnection/>
-		<tag/>
-		<url/>
+		<connection>scm:git:https://github.com/KaiqueOfS/crm-simples.git</connection>
+		<developerConnection>scm:git:https://github.com/KaiqueOfS/crm-simples.git</developerConnection>
+		<url>https://github.com/KaiqueOfS/crm-simples</url>
 	</scm>
 	<properties>
 		<java.version>21</java.version>
@@ -54,6 +53,17 @@
 			<artifactId>mysql-connector-j</artifactId>
 			<scope>runtime</scope>
 		</dependency>
+		<!-- Driver do PostgreSQL, disponível no classpath para quando um ambiente
+		     precisar rodar sobre Postgres em vez de MySQL — basta sobrescrever
+		     spring.datasource.url/driver-class-name e o dialect do Hibernate
+		     (ver comentário em application.properties). MySQL continua sendo
+		     o banco padrão em todos os ambientes hoje; nada muda em runtime
+		     só por esta dependência estar presente. -->
+		<dependency>
+			<groupId>org.postgresql</groupId>
+			<artifactId>postgresql</artifactId>
+			<scope>runtime</scope>
+		</dependency>
 		<dependency>
 			<groupId>org.flywaydb</groupId>
 			<artifactId>flyway-core</artifactId>
@@ -79,6 +89,12 @@
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-security</artifactId>
+		</dependency>
+		<!-- Health check de produção (GET /actuator/health) — ver application.properties
+		     para o que é exposto (só "health", nada de env/beans/configprops). -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-actuator</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>io.jsonwebtoken</groupId>

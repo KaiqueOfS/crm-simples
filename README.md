@@ -109,6 +109,46 @@ npm run build
 
 O build é gerado em `src/main/resources/static`. Depois, inicie o backend e acesse `http://localhost:8080`.
 
+## Executando com Docker
+
+Sobe o backend (que já serve o frontend buildado) e um MySQL, sem precisar instalar Java, Node ou MySQL na máquina.
+
+### 1. Configure as variáveis de ambiente
+
+Copie o arquivo de exemplo:
+
+```bash
+cp .env.example .env
+```
+
+Edite o `.env` e preencha pelo menos `DB_USER`, `DB_PASSWORD` e `JWT_SECRET` (uma string aleatória com pelo menos 32 caracteres). O `.env` nunca deve ser commitado.
+
+### 2. Suba os containers
+
+```bash
+docker compose up --build
+```
+
+Isso builda a imagem do backend (que já inclui o frontend compilado, ver `Dockerfile`), sobe um MySQL com volume persistente e aguarda o banco ficar saudável antes de iniciar o backend.
+
+### 3. Acesse a aplicação
+
+A aplicação completa (API + frontend) fica disponível em `http://localhost:8080`.
+
+### Variáveis de ambiente
+
+| Variável | Descrição |
+| --- | --- |
+| `DB_HOST` | Host do MySQL. Ignorada pelo `docker-compose.yml`, que sempre aponta para o serviço `mysql` internamente. |
+| `DB_PORT` | Porta do MySQL (padrão `3306`). |
+| `DB_NAME` | Nome do banco (padrão `crm_simples`). |
+| `DB_USER` | Usuário do MySQL. |
+| `DB_PASSWORD` | Senha do MySQL — obrigatória, sem valor padrão. |
+| `JWT_SECRET` | Segredo usado para assinar os tokens JWT — obrigatório, mínimo de 32 caracteres. |
+| `ALLOWED_ORIGINS` | Origens permitidas para CORS, separadas por vírgula. |
+| `SPRING_PROFILES_ACTIVE` | Perfil do Spring Boot: `dev` ou `prod` (ver `application-dev.properties`/`application-prod.properties`). |
+| `DEMO_SEED_ENABLED` | Liga a conta demo (`demo@orbiscrm.com`) na inicialização — usar só em ambiente de apresentação. |
+
 ## Endpoints principais
 
 Todas as rotas abaixo começam com `/api`. As rotas marcadas como **Sim** exigem o cabeçalho `Authorization: Bearer <token>`.

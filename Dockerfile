@@ -29,17 +29,28 @@ RUN npm run build
 # acima), por causa do outDir configurado em vite.config.ts.
 
 # ---- Estágio 2: build do backend (jar) ---------------------------------
-FROM maven:3.9-eclipse-temurin-21 AS backend-build
+# Usa o Maven Wrapper do próprio projeto (mvnw + .mvn/wrapper) em vez de
+# uma imagem com Maven pré-instalado — garante a mesma versão do Maven
+# (3.9.15, ver .mvn/wrapper/maven-wrapper.properties) usada localmente e
+# no CI. wget/unzip são só o que o wrapper precisa para baixar o Maven;
+# ficam só neste estágio de build, não vazam para a imagem final.
+FROM eclipse-temurin:21-jdk-alpine AS backend-build
 WORKDIR /app
 
+RUN apk add --no-cache wget unzip
+
+COPY mvnw ./
+COPY .mvn ./.mvn
 COPY pom.xml ./
+RUN chmod +x mvnw
+
 COPY src ./src
 
 # Traz os assets do frontend já compilados para dentro do static do
 # Spring Boot — o mesmo lugar onde o build local do Vite já os coloca.
 COPY --from=frontend-build /app/src/main/resources/static ./src/main/resources/static
 
-RUN mvn -B -q -DskipTests package
+RUN ./mvnw -B -q -DskipTests package
 
 # ---- Estágio 3: runtime -------------------------------------------------
 FROM eclipse-temurin:21-jre-alpine AS runtime

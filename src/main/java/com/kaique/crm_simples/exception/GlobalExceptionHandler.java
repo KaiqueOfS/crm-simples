@@ -10,6 +10,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -214,6 +215,27 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(Map.of("erro", ex.getMessage()));
+    }
+
+    /**
+     * Trata pedido de um recurso estático que não existe — ex.: favicon.ico,
+     * que o navegador pede automaticamente em toda página, mas o projeto
+     * não fornece. Sem este handler, caía no handler genérico de Exception
+     * logo abaixo: logava como "erro interno inesperado" (com stack trace)
+     * e devolvia 500 para algo que é só um 404 comum, poluindo os logs de
+     * produção a cada carregamento de página.
+     *
+     * Não afeta o fallback de rotas do React Router (ex.: /clientes após
+     * F5): essas rotas não têm extensão de arquivo e não passam por este
+     * resolvedor de recurso estático — caem direto no SpaFallbackController.
+     * HTTP 404 Not Found.
+     */
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<Map<String, String>> tratarRecursoNaoEncontrado(
+            NoResourceFoundException ex) {
+
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(Map.of("erro", "Recurso não encontrado."));
     }
 
     /**

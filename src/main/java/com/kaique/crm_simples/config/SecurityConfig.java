@@ -46,6 +46,16 @@ public class SecurityConfig {
 
                 .authorizeHttpRequests(auth -> auth
 
+                        // Health check de produção — precisa responder sem token para
+                        // load balancer/orquestrador conseguir checar a aplicação. Só
+                        // "health" é exposto (ver application.properties), sem detalhe
+                        // de infraestrutura interna.
+                        .requestMatchers("/actuator/health").permitAll()
+
+                        // Health check próprio da API (corpo JSON customizado,
+                        // ver HealthController) — também público, sem token.
+                        .requestMatchers("/api/health").permitAll()
+
                         // Rotas públicas de autenticação
                         .requestMatchers("/api/auth/**").permitAll()
 

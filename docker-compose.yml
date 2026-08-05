@@ -1,0 +1,59 @@
+# =========================================================================
+# docker-compose.yml — Orbis CRM
+#
+# Sobe o backend (que já serve o frontend buildado, ver Dockerfile) e um
+# MySQL para desenvolvimento/deploy em container. Nenhuma senha fica fixa
+# aqui — tudo vem de variáveis de ambiente lidas do arquivo .env na mesma
+# pasta (copie .env.example para .env antes de subir, ver README.md).
+# =========================================================================
+
+services:
+
+  mysql:
+    image: mysql:8
+    container_name: orbis-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+    # Sem "ports" aqui de propósito: só o backend precisa falar com o
+    # MySQL, e faz isso pela rede interna do compose (host "mysql", porta
+    # 3306) — expor a porta para o host não é necessário e aumenta a
+    # superfície de ataque do deploy.
+    volumes:
+      - orbis_mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: orbis-backend
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      # "mysql" é o nome do serviço acima — o Docker resolve isso como
+      # hostname automaticamente dentro da rede do compose.
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS}
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-prod}
+      DEMO_SEED_ENABLED: ${DEMO_SEED_ENABLED:-false}
+    ports:
+      - "8080:8080"
+
+volumes:
+  orbis_mysql_data:
